@@ -8,10 +8,12 @@ use winit::{
 };
 
 pub use winit::window::Window;
+use crate::renderer_2d::*;
 
 pub struct MainLoop {
     event_loop: EventLoop<()>,
     pub window: Window,
+    pub renderer2d: Renderer2D,
 }
 
 impl MainLoop {
@@ -23,13 +25,17 @@ impl MainLoop {
             .build(&event_loop)
             .unwrap();
 
+        let renderer2d = async_std::task::block_on(Renderer2D::new(&window));
+
         MainLoop {
             event_loop,
             window,
+            renderer2d
         }
     }
 
     pub fn run(self, loops: impl Loop + std::marker::Send + 'static) {
+        env_logger::init();
         async_std::task::block_on(self.runrun(loops));
     }
 
@@ -82,10 +88,11 @@ impl MainLoop {
             } if window_id == self.window.id() => match event {
                 WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
                 WindowEvent::Resized(physical_size) => {
-                    // size = (physical_size.width, physical_size.height)
+                    self.renderer2d.resize(*physical_size);
                 },
-                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {},
-                    // set new size
+                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                    self.renderer2d.resize(**new_inner_size);
+                },
                 _ => {}
             },
             Event::RedrawRequested(window_id) if window_id == self.window.id() => {
@@ -95,40 +102,11 @@ impl MainLoop {
                 last = now;
 
                 loops.render(&mut self.window);
-
-                let output = surface.get_current_texture().unwrap();
-                let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-                let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-                });
-
                 i += 1;
-                if i > 255 {
+                if i >= 255 {
                     i = 0;
                 }
-
-                {
-                    let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some("Render Pass"),
-                        color_attachments: &[wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: i as f64 / 255.0,
-                                    g: i as f64 / 255.0,
-                                    b: i as f64 / 255.0,
-                                    a: 1.0,
-                                }),
-                                store: true,
-                            },
-                        }],
-                        depth_stencil_attachment: None,
-                    });
-                }
-
-                queue.submit(std::iter::once(encoder.finish()));
-                output.present();
+                self.renderer2d.render(i);
             },
             Event::MainEventsCleared => {
                 self.window.request_redraw();

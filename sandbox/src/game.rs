@@ -16,7 +16,7 @@ impl crate::Loop for Game {
     }
 
     fn update(&mut self, window: &mut crate::Window, delta: f64){
-        println!("FPS: {}", 1.0 / delta);
+        // println!("FPS: {}", 1.0 / delta);
     }
 
     fn render(&mut self, window: &mut crate::Window){
