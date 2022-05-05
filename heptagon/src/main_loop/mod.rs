@@ -8,12 +8,20 @@ use winit::{
 };
 
 pub use winit::window::Window;
-use crate::renderer_2d::*;
+pub use winit;
+pub use winit::event::VirtualKeyCode;
+use crate::rendering::renderer_2d::*;
+
+pub use winit_input_helper::WinitInputHelper;
+
+mod render_package;
+pub use render_package::RenderPackage;
 
 pub struct MainLoop {
     event_loop: EventLoop<()>,
     pub window: Window,
-    pub renderer2d: Renderer2D,
+    input: WinitInputHelper,
+    render_package: RenderPackage,
 }
 
 impl MainLoop {
@@ -27,10 +35,15 @@ impl MainLoop {
 
         let renderer2d = async_std::task::block_on(Renderer2D::new(&window));
 
+        let render_package = RenderPackage {
+            renderer2d,
+        };
+
         MainLoop {
             event_loop,
             window,
-            renderer2d
+            input: WinitInputHelper::new(),
+            render_package,
         }
     }
 
@@ -75,50 +88,45 @@ impl MainLoop {
         };
         surface.configure(&device, &config);
 
-
-        let mut i = 0;
         let mut now = Instant::now();
         let mut last = Instant::now();
         let mut delta = 0.0;
 
-        self.event_loop.run(move |event, _, control_flow| match event {
+        self.event_loop.run(move |event, _, control_flow| {
+            self.input.update(&event);
+            match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
             } if window_id == self.window.id() => match event {
                 WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
                 WindowEvent::Resized(physical_size) => {
-                    self.renderer2d.resize(*physical_size);
+                    self.render_package.renderer2d.resize(*physical_size);
                 },
                 WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                    self.renderer2d.resize(**new_inner_size);
+                    self.render_package.renderer2d.resize(**new_inner_size);
                 },
                 _ => {}
             },
             Event::RedrawRequested(window_id) if window_id == self.window.id() => {
                 now = Instant::now();
                 delta = now.duration_since(last).as_millis() as f64 / 1000.0;
-                loops.update(&mut self.window, delta);
+                loops.update(&mut self.window, delta, &self.input);
                 last = now;
 
-                loops.render(&mut self.window);
-                i += 1;
-                if i >= 255 {
-                    i = 0;
-                }
-                self.renderer2d.render(i);
+                loops.render(&mut self.window, &mut self.render_package);
             },
             Event::MainEventsCleared => {
                 self.window.request_redraw();
             }
 
             _ => {}
-        });
+        }});
     }
 }
 
 pub trait Loop {
     fn init(&mut self, window: &mut Window);
-    fn update(&mut self, window: &mut Window, delta: f64);
-    fn render(&mut self, window: &mut Window);
+    fn update(&mut self, window: &mut Window, delta: f64, input: &WinitInputHelper);
+    fn render(&mut self, window: &mut Window, render: &mut RenderPackage);
 }
