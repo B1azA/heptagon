@@ -2,5 +2,6 @@ mod game;
 
 fn main() {
     let main_loop = heptagon::main_loop::MainLoop::new();
-    main_loop.run(game::Game::new());
+    let game = game::Game::new(&main_loop.window);
+    main_loop.run(game);
 }

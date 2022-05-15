@@ -10,18 +10,14 @@ use winit::{
 pub use winit::window::Window;
 pub use winit;
 pub use winit::event::VirtualKeyCode;
-use crate::rendering::renderer_2d::*;
+pub use crate::rendering::renderer_2d::*;
 
 pub use winit_input_helper::WinitInputHelper;
-
-mod render_package;
-pub use render_package::RenderPackage;
 
 pub struct MainLoop {
     event_loop: EventLoop<()>,
     pub window: Window,
     input: WinitInputHelper,
-    render_package: RenderPackage,
 }
 
 impl MainLoop {
@@ -33,17 +29,12 @@ impl MainLoop {
             .build(&event_loop)
             .unwrap();
 
-        let renderer2d = async_std::task::block_on(Renderer2D::new(&window));
-
-        let render_package = RenderPackage {
-            renderer2d,
-        };
+        let renderer2d = Renderer2D::new(&window);
 
         MainLoop {
             event_loop,
             window,
             input: WinitInputHelper::new(),
-            render_package,
         }
     }
 
@@ -101,10 +92,10 @@ impl MainLoop {
             } if window_id == self.window.id() => match event {
                 WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
                 WindowEvent::Resized(physical_size) => {
-                    self.render_package.renderer2d.resize(*physical_size);
+                    // self.renderer2d.resize(*physical_size);
                 },
                 WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                    self.render_package.renderer2d.resize(**new_inner_size);
+                    // self.renderer2d.resize(**new_inner_size);
                 },
                 _ => {}
             },
@@ -114,7 +105,7 @@ impl MainLoop {
                 loops.update(&mut self.window, delta, &self.input);
                 last = now;
 
-                loops.render(&mut self.window, &mut self.render_package);
+                loops.render(&mut self.window);
             },
             Event::MainEventsCleared => {
                 self.window.request_redraw();
@@ -128,5 +119,5 @@ impl MainLoop {
 pub trait Loop {
     fn init(&mut self, window: &mut Window);
     fn update(&mut self, window: &mut Window, delta: f64, input: &WinitInputHelper);
-    fn render(&mut self, window: &mut Window, render: &mut RenderPackage);
+    fn render(&mut self, window: &mut Window);
 }

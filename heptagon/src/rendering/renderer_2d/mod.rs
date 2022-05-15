@@ -18,8 +18,11 @@ pub struct Renderer2D {
 }
 
 impl Renderer2D {
+    pub fn new(window: &winit::window::Window) -> Self {
+        async_std::task::block_on(Self::newnew(window))
+    }
 
-    pub async fn new(window: &winit::window::Window) -> Self {
+    async fn newnew(window: &winit::window::Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -246,7 +249,7 @@ impl Renderer2D {
         output.present();
     }
 
-    pub(crate) fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
         if size.width > 0 && size.height > 0 {
             self.size = size;
             self.config.width = size.width;

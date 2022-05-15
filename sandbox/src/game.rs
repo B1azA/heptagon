@@ -1,11 +1,13 @@
 use heptagon::main_loop::*;
 
 pub struct Game {
+    renderer2d: Renderer2D,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(window: &Window) -> Self {
         Self {
+            renderer2d: Renderer2D::new(window),
         }
     }
 }
@@ -13,17 +15,18 @@ impl Game {
 impl Loop for Game {
     fn init(&mut self, window: &mut Window) {
         window.set_title("Heptagon");
-        let size = window.inner_size();
-        let width = size.width;
     }
 
     fn update(&mut self, window: &mut Window, delta: f64, input: &WinitInputHelper) {
         if input.key_pressed(VirtualKeyCode::Space) {
             println!("FPS: {:.2}", 1.0 / delta);
         }
+        if let Some(size) = input.window_resized() {
+            self.renderer2d.resize(size);
+        }
     }
 
-    fn render(&mut self, window: &mut Window, render_package: &mut RenderPackage) {
-        render_package.renderer2d.render();
+    fn render(&mut self, window: &mut Window) {
+        self.renderer2d.render();
     }
 }
