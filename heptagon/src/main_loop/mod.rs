@@ -21,15 +21,13 @@ pub struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new() -> Self {
+    pub fn new(window_title: &str) -> Self {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new()
-            .with_title("Hello")
+            .with_title(window_title)
             .with_inner_size(Size::Physical(PhysicalSize::new(800, 600)))
             .build(&event_loop)
             .unwrap();
-
-        let renderer2d = Renderer2D::new(&window);
 
         MainLoop {
             event_loop,

@@ -14,7 +14,6 @@ impl Game {
 
 impl Loop for Game {
     fn init(&mut self, window: &mut Window) {
-        window.set_title("Heptagon");
     }
 
     fn update(&mut self, window: &mut Window, delta: f64, input: &WinitInputHelper) {
