@@ -1,4 +1,5 @@
 use heptagon::main_loop::*;
+use heptagon::rendering::wgpu;
 
 pub struct Game {
     renderer2d: Renderer2D,

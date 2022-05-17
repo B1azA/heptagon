@@ -10,10 +10,11 @@ pub struct Renderer2D {
     size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer, 
-    num_indices: u32,
+    index_buffer: wgpu::Buffer,
     diffuse_bind_group: wgpu::BindGroup,
     diffuse_texture: Texture,
+    vertices: Vertices<'static, VertexTex>,
+    indices: Indices<'static, u16>,
 }
 
 impl Renderer2D {
@@ -85,8 +86,6 @@ impl Renderer2D {
         let vertex_buffer = vertices.to_vertex_buffer(&device);
 
         let index_buffer = indices.to_index_buffer(&device);
-
-        let num_indices = indices.len() as u32;
 
         let texture_bind_group_layout = device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
@@ -182,9 +181,10 @@ impl Renderer2D {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            num_indices,
             diffuse_bind_group,
             diffuse_texture,
+            vertices,
+            indices
         }
     }
 
@@ -222,7 +222,7 @@ impl Renderer2D {
             render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
