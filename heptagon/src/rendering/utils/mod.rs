@@ -9,3 +9,6 @@ pub use texture::*;
 
 pub mod mesh;
 pub use mesh::*;
+
+pub mod camera;
+pub use camera::*;
