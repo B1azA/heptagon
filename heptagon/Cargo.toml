@@ -14,6 +14,7 @@ wgpu = "0.12.0"
 winit = "0.26.1"
 anyhow = "1.0.57"
 winit_input_helper = "0.12.0"
+glam = "0.20.5"
 
 [dependencies.image]
 version = "0.24.2"

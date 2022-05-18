@@ -3,18 +3,19 @@ use image::GenericImageView;
 use crate::rendering::utils::*;
 
 pub struct Renderer2D {
-    surface: wgpu::Surface,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
-    config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
-    render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    diffuse_bind_group: wgpu::BindGroup,
+    pub surface: wgpu::Surface,
+    pub device: wgpu::Device,
+    pub queue: wgpu::Queue,
+    pub config: wgpu::SurfaceConfiguration,
+    pub size: winit::dpi::PhysicalSize<u32>,
+    pub render_pipeline: wgpu::RenderPipeline,
+    pub vertex_buffer: wgpu::Buffer,
+    pub index_buffer: wgpu::Buffer,
+    pub diffuse_bind_group: wgpu::BindGroup,
     diffuse_texture: Texture,
     vertices: Vertices<'static, VertexTex>,
     indices: Indices<'static, u16>,
+    texture_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl Renderer2D {
@@ -57,8 +58,7 @@ impl Renderer2D {
         };
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("../../images/happy-tree.png");
-        let diffuse_texture = Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
+        let diffuse_texture = Texture::from_file(&device, &queue, "images/happy-tree.png", "happy-tree.png").unwrap();
 
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -184,7 +184,8 @@ impl Renderer2D {
             diffuse_bind_group,
             diffuse_texture,
             vertices,
-            indices
+            indices,
+            texture_bind_group_layout
         }
     }
 
@@ -220,6 +221,63 @@ impl Renderer2D {
 
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
+        }
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+        output.present();
+    }
+
+    pub fn render_texture(&self, texture: &Texture) {
+        let diffuse_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                }
+            ],
+            label: Some("diffuse_bind_group"),
+        });
+
+
+        let output = self.surface.get_current_texture().unwrap();
+        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Render Encoder"),
+        });
+
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[
+                    wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(
+                                wgpu::Color {
+                                    r: 0.1,
+                                    g: 0.2,
+                                    b: 0.3,
+                                    a: 1.0,
+                                }
+                            ),
+                            store: true,
+                        }
+                    }
+                ],
+                depth_stencil_attachment: None,
+            });
+
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_bind_group(0, &diffuse_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);

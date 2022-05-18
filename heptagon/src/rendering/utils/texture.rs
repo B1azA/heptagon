@@ -1,5 +1,7 @@
 use image::GenericImageView;
 use anyhow::*;
+use std::fs::File;
+use std::path::Path;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
@@ -8,6 +10,11 @@ pub struct Texture {
 }
 
 impl Texture {
+    pub fn from_file(device: &wgpu::Device, queue: &wgpu::Queue, file: &str, label: &str) -> Result<Self> {
+        let bytes = std::fs::read(file).unwrap();
+        Self::from_bytes(&device, &queue, &bytes, label)
+    }
+
     pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str) -> Result<Self> {
         let img = image::load_from_memory(bytes).unwrap();
         Self::from_image(device, queue, &img, Some(label))
