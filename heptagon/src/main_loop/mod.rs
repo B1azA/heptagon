@@ -11,8 +11,8 @@ pub use winit::window::Window;
 pub use winit;
 pub use winit::event::VirtualKeyCode;
 pub use crate::rendering::renderer_2d::*;
-
 pub use winit_input_helper::WinitInputHelper;
+pub use glam;
 
 pub struct MainLoop {
     event_loop: EventLoop<()>,

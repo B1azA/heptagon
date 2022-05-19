@@ -1,3 +1,5 @@
+use wgpu::util::DeviceExt;
+
 pub struct Camera {
     pub eye: glam::Vec3,
     pub target: glam::Vec3,
@@ -33,6 +35,67 @@ impl Camera {
         let proj = glam::Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar);
         let gl_to_wgpu = glam::Mat4::from_cols_array(&OPENGL_TO_WGPU_MATRIX);
         return gl_to_wgpu * proj * view;
+    }
+
+    pub fn uniform(&self) -> CameraUniform {
+        let mut uniform = CameraUniform::new();
+        uniform.update_view_proj(&self);
+        uniform
+    }
+
+    pub fn buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
+        device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Camera Buffer"),
+                contents: self.uniform().to_bytes(),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            }
+        )
+    }
+
+    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+        device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }
+            ],
+            label: Some("camera_bind_group_layout"),
+        })
+    }
+
+    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &Self::bind_group_layout(device),
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: self.buffer(device).as_entire_binding(),
+                }
+            ],
+            label: Some("camera_binding_group")
+        })
+    }
+
+    pub fn bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: self.buffer(device).as_entire_binding(),
+                }
+            ],
+            label: Some("camera_binding_group")
+        })
     }
 }
 
