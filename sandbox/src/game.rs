@@ -20,6 +20,7 @@ impl Game {
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+            speed: 0.1,
         };
         Self {
             renderer2d,
@@ -39,6 +40,22 @@ impl Loop for Game {
         }
         if let Some(size) = input.window_resized() {
             self.renderer2d.resize(size);
+        }
+
+        if input.key_held(VirtualKeyCode::Left) {
+            self.camera.shift(glam::Vec3::new(-1.0, 0.0, 0.0));
+        }
+
+        if input.key_held(VirtualKeyCode::Right) {
+            self.camera.shift(glam::Vec3::new(1.0, 0.0, 0.0));
+        }
+
+        if input.key_held(VirtualKeyCode::Up) {
+            self.camera.shift(glam::Vec3::new(0.0, 0.0, -1.0));
+        }
+
+        if input.key_held(VirtualKeyCode::Down) {
+            self.camera.shift(glam::Vec3::new(0.0, 0.0, 1.0));
         }
     }
 

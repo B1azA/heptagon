@@ -102,6 +102,7 @@ impl Renderer2D {
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+            speed: 1.0,
         };
 
         let camera_buffer = camera.buffer(&device);
