@@ -80,37 +80,43 @@ impl MainLoop {
         let mut now = Instant::now();
         let mut last = Instant::now();
         let mut delta = 0.0;
+        let mut mouse_offset = (0.0, 0.0);
 
         self.event_loop.run(move |event, _, control_flow| {
             self.input.update(&event);
             match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == self.window.id() => match event {
-                WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
-                WindowEvent::Resized(physical_size) => {
-                    // self.renderer2d.resize(*physical_size);
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.window.id() => match event {
+                    WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
+                    WindowEvent::Resized(physical_size) => {
+                        // self.renderer2d.resize(*physical_size);
+                    },
+                    WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                        // self.renderer2d.resize(**new_inner_size);
+                    },
+                    _ => {}
                 },
-                WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                    // self.renderer2d.resize(**new_inner_size);
+                Event::RedrawRequested(window_id) if window_id == self.window.id() => {
+                    now = Instant::now();
+                    delta = now.duration_since(last).as_millis() as f64 / 1000.0;
+                    loops.update(&mut self.window, delta, &self.input);
+                    last = now;
+
+                    loops.render(&mut self.window);
                 },
+                Event::MainEventsCleared => {
+                    self.window.request_redraw();
+                },
+                Event::DeviceEvent { event, .. } => match event {
+                    DeviceEvent::MouseMotion { delta } => mouse_offset = delta,
+                    _ => (),
+                }
+
                 _ => {}
-            },
-            Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                now = Instant::now();
-                delta = now.duration_since(last).as_millis() as f64 / 1000.0;
-                loops.update(&mut self.window, delta, &self.input);
-                last = now;
-
-                loops.render(&mut self.window);
-            },
-            Event::MainEventsCleared => {
-                self.window.request_redraw();
             }
-
-            _ => {}
-        }});
+        });
     }
 }
 

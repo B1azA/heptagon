@@ -6,6 +6,8 @@ pub struct Game {
     renderer2d: Renderer2D,
     texture: Texture,
     camera: Camera,
+    cursor_locked: bool,
+    last_mouse_pos: (f32, f32),
 }
 
 impl Game {
@@ -26,7 +28,9 @@ impl Game {
         Self {
             renderer2d,
             texture,
-            camera
+            camera,
+            cursor_locked: false,
+            last_mouse_pos: (0.0, 0.0),
         }
     }
 }
@@ -56,18 +60,37 @@ impl Loop for Game {
             self.camera.eye += self.camera.right().normalize() / 5.0;
         }
 
-        let offset = input.mouse_diff();
+        // ------- MOUSE -------
+        
+        let mut offset = input.mouse_diff();
+        
+        if self.cursor_locked {
+            let window_size = window.inner_size();
+            let new_mouse_pos = winit::dpi::PhysicalPosition::new(window_size.width / 2, window_size.height / 2);
+            window.set_cursor_position(new_mouse_pos).unwrap();
+        }
+        
+        println!("old: {:?}", offset);
         self.camera.target.x += offset.0 / 200.0;
         self.camera.target.y -= offset.1 / 200.0;
+        
+        if input.key_pressed(VirtualKeyCode::L) {
+            self.cursor_locked = !self.cursor_locked;
+            if self.cursor_locked {
+                println!("Cursor: locked");
+            } else {
+                println!("Cursor: unlocked");
+            }
+        }
 
         if input.key_pressed(VirtualKeyCode::G) {
             window.set_cursor_grab(true).unwrap();
-            println!("grabbed");
+            println!("Cursor: grabbed");
         }
 
         if input.key_pressed(VirtualKeyCode::U) {
             window.set_cursor_grab(false).unwrap();
-            println!("ungrabbed");
+            println!("Cursor: ungrabbed");
         }
     }
 
