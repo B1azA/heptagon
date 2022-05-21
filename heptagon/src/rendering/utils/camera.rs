@@ -101,6 +101,14 @@ impl Camera {
         })
     }
 
+    pub fn forward(&self) -> glam::Vec3 {
+        self.target - self.eye
+    }
+
+    pub fn right(&self) -> glam::Vec3 {
+        self.forward().cross(self.up)
+    }
+
     pub fn shift(&mut self, direction: glam::Vec3) {
         let forward = self.target - self.eye;
         let forward_norm = forward.normalize();
