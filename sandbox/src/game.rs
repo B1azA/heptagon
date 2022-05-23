@@ -8,6 +8,7 @@ pub struct Game {
     camera: Camera,
     cursor_locked: bool,
     last_mouse_pos: (f32, f32),
+    new_mouse_pos: (f32, f32),
 }
 
 impl Game {
@@ -31,6 +32,7 @@ impl Game {
             camera,
             cursor_locked: false,
             last_mouse_pos: (0.0, 0.0),
+            new_mouse_pos: (0.0, 0.0),
         }
     }
 }
@@ -39,7 +41,7 @@ impl Loop for Game {
     fn init(&mut self, window: &mut Window) {
     }
 
-    fn update(&mut self, window: &mut Window, delta: f64, input: &WinitInputHelper) {
+    fn update(&mut self, window: &mut Window, delta: f64, input: &mut Input) {
         if input.key_held(VirtualKeyCode::Space) {
             println!("FPS: {:.2}", 1.0 / delta);
         }
@@ -62,20 +64,15 @@ impl Loop for Game {
 
         // ------- MOUSE -------
         
-        let mut offset = input.mouse_diff();
+        let offset = input.mouse_delta();
+
+        self.camera.target.x += offset.0 / 100.0;
+        self.camera.target.y -= offset.1 / 100.0;
         
-        if self.cursor_locked {
-            let window_size = window.inner_size();
-            let new_mouse_pos = winit::dpi::PhysicalPosition::new(window_size.width / 2, window_size.height / 2);
-            window.set_cursor_position(new_mouse_pos).unwrap();
-        }
-        
-        println!("old: {:?}", offset);
-        self.camera.target.x += offset.0 / 200.0;
-        self.camera.target.y -= offset.1 / 200.0;
-        
-        if input.key_pressed(VirtualKeyCode::L) {
+        if input.key_pressed(Key::L) {
             self.cursor_locked = !self.cursor_locked;
+            input.mouse_lock(self.cursor_locked);
+
             if self.cursor_locked {
                 println!("Cursor: locked");
             } else {
@@ -83,12 +80,12 @@ impl Loop for Game {
             }
         }
 
-        if input.key_pressed(VirtualKeyCode::G) {
+        if input.key_pressed(Key::G) {
             window.set_cursor_grab(true).unwrap();
             println!("Cursor: grabbed");
         }
 
-        if input.key_pressed(VirtualKeyCode::U) {
+        if input.key_pressed(Key::U) {
             window.set_cursor_grab(false).unwrap();
             println!("Cursor: ungrabbed");
         }
