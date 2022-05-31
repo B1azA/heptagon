@@ -16,8 +16,8 @@ impl Game {
         let texture = Texture::from_file(&renderer2d.device, &renderer2d.queue, "images/happy-tree.png", "happy-tree.png").unwrap();
         let mut camera = Camera {
             eye: (0.0, 0.0, 2.0).into(),
-            target: glam::Vec3::new(0.0, 0.0, 0.0),
-            up: glam::Vec3::new(0.0, 1.0, 0.0),
+            target: glam::Vec3::ZERO,
+            up: glam::Vec3::Y,
             aspect: renderer2d.config.width as f32 / renderer2d.config.height as f32,
             fovy: 45.0,
             znear: 0.1,
@@ -40,27 +40,38 @@ impl Loop for Game {
 
     fn update(&mut self, window: &mut Window, delta: f64, input: &mut Input) {
         if input.key_held(VirtualKeyCode::Space) {
-            println!("FPS: {:.2}", 1.0 / delta);
+            println!("UPS: {:.2}", 1.0 / delta);
         }
         if let Some(size) = input.window_resized() {
             self.renderer2d.resize(size);
         }
 
         if input.key_held(VirtualKeyCode::W) {
-            self.camera.eye += self.camera.forward().normalize() / 5.0;
+            let shift = self.camera.forward().normalize() / 5.0;
+            self.camera.eye += shift;
+            self.camera.target += shift;
         }
         if input.key_held(VirtualKeyCode::S) {
-            self.camera.eye -= self.camera.forward().normalize() / 5.0;
+            let shift = self.camera.forward().normalize() / 5.0;
+            self.camera.eye -= shift;
+            self.camera.target -= shift;
         }
         if input.key_held(VirtualKeyCode::A) {
-            self.camera.eye -= self.camera.right().normalize() / 5.0;
+            let shift = self.camera.right().normalize() / 5.0;
+            self.camera.eye -= shift;
+            self.camera.target -= shift;
         }
         if input.key_held(VirtualKeyCode::D) {
-            self.camera.eye += self.camera.right().normalize() / 5.0;
+            let shift = self.camera.right().normalize() / 5.0;
+            self.camera.eye += shift;
+            self.camera.target += shift;
+        }
+
+        if input.key_pressed(Key::C) {
+            self.camera.target = glam::Vec3::new(0.0, 0.0, 0.0);
         }
 
         // ------- MOUSE -------
-        
         let offset = input.mouse_delta();
 
         self.camera.target.x += offset.0 / 100.0;
