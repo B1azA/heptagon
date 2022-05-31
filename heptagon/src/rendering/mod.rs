@@ -1,3 +1,3 @@
-pub mod renderer_2d;
+pub mod renderer;
 pub mod utils;
 pub mod wgpu;

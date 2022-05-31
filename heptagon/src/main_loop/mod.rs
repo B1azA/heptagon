@@ -13,7 +13,7 @@ pub use input::*;
 pub use winit::window::Window;
 pub use winit;
 pub use winit::event::VirtualKeyCode;
-pub use crate::rendering::renderer_2d::*;
+pub use crate::rendering::renderer::*;
 pub use winit_input_helper::WinitInputHelper;
 pub use glam;
 
@@ -37,6 +37,46 @@ impl MainLoop {
             window,
             input: Input::new(),
         }
+    }
+
+    pub fn get_render_belongings(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
+        async_std::task::block_on(self.get_render_belongings_async())
+    }
+
+    async fn get_render_belongings_async(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
+        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let surface = unsafe { instance.create_surface(&self.window) };
+        let size = self.window.inner_size();
+        let adapter = instance.request_adapter(
+            &wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::default(),
+                compatible_surface: Some(&surface),
+                force_fallback_adapter: false,
+            },
+        ).await.unwrap();
+
+        let (device, queue) = adapter.request_device(
+            &wgpu::DeviceDescriptor {
+                features: wgpu::Features::empty(),
+                limits: if cfg!(target_arch = "wasm32") {
+                    wgpu::Limits::downlevel_webgl2_defaults()
+                } else {
+                    wgpu::Limits::default()
+                },
+                label: None,
+            },
+            None,
+        ).await.unwrap();
+
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: surface.get_preferred_format(&adapter).unwrap(),
+            width: size.width,
+            height: size.height,
+            present_mode: wgpu::PresentMode::Fifo,
+        };
+
+        (surface, device, queue, config)
     }
 
     pub fn run(self, loops: impl Loop + std::marker::Send + 'static) {
@@ -107,7 +147,7 @@ impl MainLoop {
 
                     if self.input.mouse_lock {
                         let new_pos = winit::dpi::PhysicalPosition::new(self.window.inner_size().width / 2, 
-                        self.window.inner_size().width / 2);
+                        self.window.inner_size().height / 2);
                         let mouse_pos = self.input.input_helper.mouse();
                         self.window.set_cursor_position(new_pos).unwrap();
 

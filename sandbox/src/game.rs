@@ -3,17 +3,16 @@ use heptagon::rendering::wgpu;
 use heptagon::rendering::utils::{texture::Texture, camera::Camera };
 
 pub struct Game {
-    renderer2d: Renderer2D,
+    renderer2d: Renderer,
     texture: Texture,
     camera: Camera,
     cursor_locked: bool,
-    last_mouse_pos: (f32, f32),
-    new_mouse_pos: (f32, f32),
 }
 
 impl Game {
-    pub fn new(window: &Window) -> Self {
-        let renderer2d = Renderer2D::new(window);
+    pub fn new(window: &Window, renderer: Renderer) -> Self {
+        let renderer2d = renderer;
+
         let texture = Texture::from_file(&renderer2d.device, &renderer2d.queue, "images/happy-tree.png", "happy-tree.png").unwrap();
         let mut camera = Camera {
             eye: (0.0, 0.0, 2.0).into(),
@@ -31,8 +30,6 @@ impl Game {
             texture,
             camera,
             cursor_locked: false,
-            last_mouse_pos: (0.0, 0.0),
-            new_mouse_pos: (0.0, 0.0),
         }
     }
 }
