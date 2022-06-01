@@ -1,6 +1,8 @@
 use heptagon::main_loop::*;
 use heptagon::rendering::wgpu;
-use heptagon::rendering::utils::{texture::Texture, camera::Camera };
+use heptagon::rendering::utils::{texture::Texture, camera::Camera, text::Font };
+
+use std::io::prelude::*;
 
 pub struct Game {
     renderer2d: Renderer,
@@ -12,9 +14,8 @@ pub struct Game {
 impl Game {
     pub fn new(window: &Window, renderer: Renderer) -> Self {
         let renderer2d = renderer;
-
-        let texture = Texture::from_file(&renderer2d.device, &renderer2d.queue, "images/happy-tree.png", "happy-tree.png").unwrap();
-        let mut camera = Camera {
+        let texture = Texture::from_path(&renderer2d.device, &renderer2d.queue, "assets/images/rust.png", "happy-tree.png").unwrap();
+        let camera = Camera {
             eye: (0.0, 0.0, 2.0).into(),
             target: glam::Vec3::ZERO,
             up: glam::Vec3::Y,
@@ -24,6 +25,10 @@ impl Game {
             zfar: 100.0,
             speed: 0.1,
         };
+
+        let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
+        let texture = Texture::from_image(&renderer2d.device, &renderer2d.queue,
+            &font.get_image("This is RustType rendered into a png!", 32.0, (150, 0, 0)), "text_texture").unwrap();
 
         Self {
             renderer2d,

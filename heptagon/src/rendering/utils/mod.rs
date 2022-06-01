@@ -12,3 +12,6 @@ pub use mesh::*;
 
 pub mod camera;
 pub use camera::*;
+
+pub mod text;
+pub use text::*;

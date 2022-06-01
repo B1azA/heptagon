@@ -10,18 +10,18 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn from_file(device: &wgpu::Device, queue: &wgpu::Queue, file: &str, label: &str) -> Result<Self> {
-        let bytes = std::fs::read(file).unwrap();
+    pub fn from_path(device: &wgpu::Device, queue: &wgpu::Queue, path: &str, label: &str) -> Result<Self> {
+        let bytes = std::fs::read(path).unwrap();
         Self::from_bytes(&device, &queue, &bytes, label)
     }
 
     pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str) -> Result<Self> {
         let img = image::load_from_memory(bytes).unwrap();
-        Self::from_image(device, queue, &img, Some(label))
+        Self::from_image(device, queue, &img, label)
     }
 
     pub fn from_image(device: &wgpu::Device, queue: &wgpu::Queue, 
-        img: &image::DynamicImage, label: Option<&str>) -> Result<Self> {
+        img: &image::DynamicImage, label: &str) -> Result<Self> {
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
 
@@ -32,7 +32,7 @@ impl Texture {
         };
         let texture = device.create_texture(
             &wgpu::TextureDescriptor {
-                label,
+                label: Some(label),
                 size,
                 mip_level_count: 1,
                 sample_count: 1,

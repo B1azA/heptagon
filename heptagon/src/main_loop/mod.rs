@@ -84,7 +84,6 @@ impl MainLoop {
         loops.init(&mut self.window);
 
         let mut last = Instant::now();
-        let mut mouse_offset = (0.0, 0.0);
 
         self.event_loop.run(move |event, _, control_flow| {
             self.input.update(&event);

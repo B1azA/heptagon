@@ -11,8 +11,6 @@ pub struct Renderer {
     pub render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
-    pub diffuse_bind_group: wgpu::BindGroup,
-    diffuse_texture: Texture,
     vertices: Vertices<'static, VertexTex>,
     indices: Indices<'static, u16>,
     texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -29,8 +27,6 @@ impl Renderer {
     async fn custom_newnew(surface: wgpu::Surface, device: wgpu::Device, queue: wgpu::Queue, config: wgpu::SurfaceConfiguration) -> Self {
 
         surface.configure(&device, &config);
-
-        let diffuse_texture = Texture::from_file(&device, &queue, "images/happy-tree.png", "happy-tree.png").unwrap();
 
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -68,8 +64,6 @@ impl Renderer {
         let index_buffer = indices.to_index_buffer(&device);
 
         let texture_bind_group_layout = Texture::bind_group_layout(&device);
-
-        let diffuse_bind_group = diffuse_texture.bind_group(&device);
 
         let camera = Camera {
             eye: (0.0, 1.0, 2.0).into(),
@@ -112,10 +106,7 @@ impl Renderer {
                 entry_point: "fs_main",
                 targets: &[wgpu::ColorTargetState {
                     format: config.format,
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent::REPLACE,
-                        alpha: wgpu::BlendComponent::REPLACE,
-                    }),
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 }],
             }),
@@ -148,8 +139,6 @@ impl Renderer {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            diffuse_bind_group,
-            diffuse_texture,
             vertices,
             indices,
             texture_bind_group_layout,
@@ -198,8 +187,6 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
-        let diffuse_texture = Texture::from_file(&device, &queue, "images/happy-tree.png", "happy-tree.png").unwrap();
-
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
@@ -236,8 +223,6 @@ impl Renderer {
         let index_buffer = indices.to_index_buffer(&device);
 
         let texture_bind_group_layout = Texture::bind_group_layout(&device);
-
-        let diffuse_bind_group = diffuse_texture.bind_group(&device);
 
         let camera = Camera {
             eye: (0.0, 1.0, 2.0).into(),
@@ -314,8 +299,6 @@ impl Renderer {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            diffuse_bind_group,
-            diffuse_texture,
             vertices,
             indices,
             texture_bind_group_layout,
@@ -325,46 +308,46 @@ impl Renderer {
         }
     }
 
-    pub fn render(&self) {
-        let output = self.surface.get_current_texture().unwrap();
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
+    // pub fn render(&self) {
+    //     let output = self.surface.get_current_texture().unwrap();
+    //     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+    //     let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+    //         label: Some("Render Encoder"),
+    //     });
 
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(
-                                wgpu::Color {
-                                    r: 0.1,
-                                    g: 0.2,
-                                    b: 0.3,
-                                    a: 1.0,
-                                }
-                            ),
-                            store: true,
-                        }
-                    }
-                ],
-                depth_stencil_attachment: None,
-            });
+    //     {
+    //         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+    //             label: Some("Render Pass"),
+    //             color_attachments: &[
+    //                 wgpu::RenderPassColorAttachment {
+    //                     view: &view,
+    //                     resolve_target: None,
+    //                     ops: wgpu::Operations {
+    //                         load: wgpu::LoadOp::Clear(
+    //                             wgpu::Color {
+    //                                 r: 0.1,
+    //                                 g: 0.2,
+    //                                 b: 0.3,
+    //                                 a: 1.0,
+    //                             }
+    //                         ),
+    //                         store: true,
+    //                     }
+    //                 }
+    //             ],
+    //             depth_stencil_attachment: None,
+    //         });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
-        }
+    //         render_pass.set_pipeline(&self.render_pipeline);
+    //         render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
+    //         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+    //         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+    //         render_pass.draw_indexed(0..self.indices.len() as u32, 0, 0..1);
+    //     }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
-        output.present();
-    }
+    //     self.queue.submit(std::iter::once(encoder.finish()));
+    //     output.present();
+    // }
 
     pub fn render_texture(&self, texture: &Texture, camera: &Camera) {
         let diffuse_bind_group = texture.bind_group(&self.device);
