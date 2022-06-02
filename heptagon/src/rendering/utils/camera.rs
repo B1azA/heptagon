@@ -1,4 +1,5 @@
 use wgpu::util::DeviceExt;
+use crate::rendering::utils::uniform::Uniform;
 
 pub struct Camera {
     pub eye: glam::Vec3,
@@ -33,6 +34,13 @@ impl Camera {
         }
     }
 
+    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+        let mut camera_uniform = CameraUniform::new();
+        camera_uniform.update_view_proj(self);
+        let mut uniform = Uniform::new(camera_uniform);
+        uniform.get_bind_group(device)
+    }
+
     pub fn build_view_projection_matrix(&self) -> glam::Mat4 {
         let view = glam::Mat4::look_at_rh(self.eye, self.target, self.up);
         let proj = glam::Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar);
@@ -40,65 +48,16 @@ impl Camera {
         return gl_to_wgpu * proj * view;
     }
 
-    pub fn uniform(&self) -> CameraUniform {
-        let mut uniform = CameraUniform::new();
-        uniform.update_view_proj(&self);
-        uniform
+    pub fn get_view_mat(&self) -> glam::Mat4 {
+        glam::Mat4::look_at_rh(self.eye, self.target, self.up)
     }
 
-    pub fn buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Camera Buffer"),
-                contents: self.uniform().to_bytes(),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            }
-        )
+    pub fn get_projection_mat(&self) -> glam::Mat4 {
+        glam::Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar)
     }
 
     pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        device.create_bind_group_layout(
-            &wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }
-            ],
-            label: Some("camera_bind_group_layout"),
-        })
-    }
-
-    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::bind_group_layout(device),
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: self.buffer(device).as_entire_binding(),
-                }
-            ],
-            label: Some("camera_binding_group")
-        })
-    }
-
-    pub fn bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: self.buffer(device).as_entire_binding(),
-                }
-            ],
-            label: Some("camera_binding_group")
-        })
+        Uniform::<CameraUniform>::get_bind_group_layout(device)
     }
 
     pub fn forward(&self) -> glam::Vec3 {
@@ -137,24 +96,27 @@ impl Camera {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct CameraUniform {
-    view_proj: glam::Mat4,
+    view: glam::Mat4,
+    proj: glam::Mat4,
 }
 
 impl CameraUniform {
     pub fn new() -> Self {
         Self {
-            view_proj: glam::Mat4::IDENTITY,
+            view: glam::Mat4::IDENTITY,
+            proj: glam::Mat4::IDENTITY,
         }
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.build_view_projection_matrix().into();
+        self.view = camera.get_view_mat();
+        self.proj = camera.get_projection_mat();
     }
 
     pub fn to_bytes<'a>(&self) -> &'a [u8] {
         unsafe {
-            let bytes = (&self.view_proj as *const glam::Mat4) as *const u8;
-            return std::slice::from_raw_parts(bytes, 64);
+            let bytes = (self as *const Self) as *const u8;
+            return std::slice::from_raw_parts(bytes, std::mem::size_of::<Self>());
         }
     }
 }

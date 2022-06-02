@@ -15,3 +15,6 @@ pub use camera::*;
 
 pub mod text;
 pub use text::*;
+
+pub mod uniform;
+pub use uniform::*;

@@ -11,12 +11,8 @@ pub struct Renderer {
     pub render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
-    vertices: Vertices<'static, VertexTex>,
+    _vertices: Vertices<'static, VertexTex>,
     indices: Indices<'static, u16>,
-    texture_bind_group_layout: wgpu::BindGroupLayout,
-    camera: Camera,
-    camera_buffer: wgpu::Buffer,
-    camera_bind_group: wgpu::BindGroup,
 }
 
 impl Renderer {
@@ -75,12 +71,8 @@ impl Renderer {
             zfar: 100.0,
             speed: 1.0,
         };
-
-        let camera_buffer = camera.buffer(&device);
  
         let camera_bind_group_layout = Camera::bind_group_layout(&device);
-
-        let camera_bind_group = camera.bind_group(&device);
 
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
@@ -139,12 +131,8 @@ impl Renderer {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            vertices,
+            _vertices: vertices,
             indices,
-            texture_bind_group_layout,
-            camera,
-            camera_buffer,
-            camera_bind_group,
         }
     }
 
@@ -187,125 +175,7 @@ impl Renderer {
         };
         surface.configure(&device, &config);
 
-        let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
-        });
-
-        let indices = Indices::<u16>::new(
-            &[
-                0, 1, 2,
-                2, 3, 0,
-            ]
-        );
-
-        // let vertices = Vertices::new(
-        //     &[
-        //         VertexTex { position: [-0.0868241, 0.49240386, 0.0], tex_coords: [0.4131759, 1.0 - 0.99240386], }, // A
-        //         VertexTex { position: [-0.49513406, 0.06958647, 0.0], tex_coords: [0.0048659444, 1.0 - 0.56958647], }, // B
-        //         VertexTex { position: [-0.21918549, -0.44939706, 0.0], tex_coords: [0.28081453, 1.0 - 0.05060294], }, // C
-        //         VertexTex { position: [0.35966998, -0.3473291, 0.0], tex_coords: [0.85967, 1.0 - 0.1526709], }, // D
-        //         VertexTex { position: [0.44147372, 0.2347359, 0.0], tex_coords: [0.9414737, 1.0 - 0.7347359], }, // E
-        //     ]
-        // );
-        
-        let vertices = Vertices::new(
-            &[
-                VertexTex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], }, // A
-                VertexTex { position: [-0.5, -0.5, 0.0], tex_coords: [0.0, 1.0], }, // B
-                VertexTex { position: [0.5, -0.5, 0.0], tex_coords: [1.0, 1.0], }, // C
-                VertexTex { position: [0.5, 0.5, 0.0], tex_coords: [1.0, 0.0], }, // D
-            ]
-        );
-
-        let vertex_buffer = vertices.to_vertex_buffer(&device);
-
-        let index_buffer = indices.to_index_buffer(&device);
-
-        let texture_bind_group_layout = Texture::bind_group_layout(&device);
-
-        let camera = Camera {
-            eye: (0.0, 1.0, 2.0).into(),
-            target: glam::Vec3::new(0.0, 0.0, 0.0),
-            up: glam::Vec3::new(0.0, 1.0, 0.0),
-            aspect: config.width as f32 / config.height as f32,
-            fovy: 45.0,
-            znear: 0.1,
-            zfar: 100.0,
-            speed: 1.0,
-        };
-
-        let camera_buffer = camera.buffer(&device);
- 
-        let camera_bind_group_layout = Camera::bind_group_layout(&device);
-
-        let camera_bind_group = camera.bind_group(&device);
-
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[
-                &texture_bind_group_layout,
-                &camera_bind_group_layout,
-            ],
-            push_constant_ranges: &[],
-        });
-
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[
-                    Vertices::<VertexTex>::layout(),
-                ],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent::REPLACE,
-                        alpha: wgpu::BlendComponent::REPLACE,
-                    }),
-                    write_mask: wgpu::ColorWrites::ALL,
-                }],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-        });
-
-        Self {
-            surface,
-            device,
-            queue,
-            config,
-            size: window.inner_size(),
-            render_pipeline,
-            vertex_buffer,
-            index_buffer,
-            vertices,
-            indices,
-            texture_bind_group_layout,
-            camera,
-            camera_buffer,
-            camera_bind_group,
-        }
+        Self::custom_new(surface, device, queue, config)
     }
 
     // pub fn render(&self) {
@@ -350,8 +220,9 @@ impl Renderer {
     // }
 
     pub fn render_texture(&self, texture: &Texture, camera: &Camera) {
+        let transformation = glam::Mat4::ZERO;
         let diffuse_bind_group = texture.bind_group(&self.device);
-        let camera_bind_group = camera.bind_group(&self.device);
+        let camera_bind_group = camera.get_bind_group(&self.device);
         let output = self.surface.get_current_texture().unwrap();
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
