@@ -34,20 +34,6 @@ impl Camera {
         }
     }
 
-    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
-        let mut camera_uniform = CameraUniform::new();
-        camera_uniform.update_view_proj(self);
-        let mut uniform = Uniform::new(camera_uniform);
-        uniform.get_bind_group(device)
-    }
-
-    pub fn build_view_projection_matrix(&self) -> glam::Mat4 {
-        let view = glam::Mat4::look_at_rh(self.eye, self.target, self.up);
-        let proj = glam::Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar);
-        let gl_to_wgpu = glam::Mat4::from_cols_array(&OPENGL_TO_WGPU_MATRIX);
-        return gl_to_wgpu * proj * view;
-    }
-
     pub fn get_view_mat(&self) -> glam::Mat4 {
         glam::Mat4::look_at_rh(self.eye, self.target, self.up)
     }
@@ -56,40 +42,12 @@ impl Camera {
         glam::Mat4::perspective_rh(self.fovy, self.aspect, self.znear, self.zfar)
     }
 
-    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        Uniform::<CameraUniform>::get_bind_group_layout(device)
-    }
-
     pub fn forward(&self) -> glam::Vec3 {
         self.target - self.eye
     }
 
     pub fn right(&self) -> glam::Vec3 {
         self.forward().cross(self.up)
-    }
-
-    pub fn shift(&mut self, direction: glam::Vec3) {
-        let forward = self.target - self.eye;
-        let forward_norm = forward.normalize();
-        let forward_mag = forward.length();
-
-        if direction.z < 0.0 && forward_mag > self.speed {
-            self.eye += forward_norm * self.speed;
-        }
-        if direction.z > 0.0 {
-            self.eye -= forward_norm * self.speed;
-        }
-
-        let right = forward_norm.cross(self.up);
-        let forward = self.target - self.eye;
-        let forward_mag = forward.length();
-
-        if direction.x > 0.0 {
-            self.eye = self.target - (forward + right * self.speed).normalize() * forward_mag;
-        }
-        if direction.x < 0.0 {
-            self.eye = self.target - (forward - right * self.speed).normalize() * forward_mag;
-        }
     }
 }
 

@@ -1,11 +1,10 @@
 // Vertex shader
-struct CameraUniform {
-    view: mat4x4<f32>;
-    proj: mat4x4<f32>;
+struct Mat4Uniform {
+    matrix: mat4x4<f32>;
 };
 
 [[group(1), binding(0)]] // 1.
-var<uniform> camera: CameraUniform;
+var<uniform> mvp: Mat4Uniform;
 
 struct VertexInput {
     [[location(0)]] position: vec3<f32>;
@@ -18,12 +17,10 @@ struct VertexOutput {
 };
 
 [[stage(vertex)]]
-fn vs_main(
-    model: VertexInput,
-) -> VertexOutput {
+fn vs_main(model: VertexInput,) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = camera.proj * camera.view * vec4<f32>(model.position, 1.0); // 2.
+    out.clip_position = mvp.matrix * vec4<f32>(model.position, 1.0); // 2.
     return out;
 }
 

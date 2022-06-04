@@ -65,3 +65,33 @@ impl<T> Uniform<T> {
         }
     }
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct Mat4Uniform {
+    matrix: glam::Mat4,
+}
+
+impl Mat4Uniform {
+    pub fn new(model: glam::Mat4, view: glam::Mat4, proj: glam::Mat4) -> Self {
+        Self {
+            matrix: proj * view * model,
+        }
+    }
+
+    pub fn to_bytes<'a>(&self) -> &'a [u8] {
+        unsafe {
+            let bytes = (self as *const Self) as *const u8;
+            return std::slice::from_raw_parts(bytes, std::mem::size_of::<Self>());
+        }
+    }
+
+    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+        let uniform = Uniform::new(*self);
+        uniform.get_bind_group(device)
+    }
+
+    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+        Uniform::<Self>::get_bind_group_layout(device)
+    }
+}

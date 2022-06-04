@@ -5,7 +5,7 @@ use heptagon::rendering::utils::{texture::Texture, camera::Camera, text::Font };
 use std::io::prelude::*;
 
 pub struct Game {
-    renderer2d: Renderer,
+    renderer: Renderer,
     texture: Texture,
     camera: Camera,
     cursor_locked: bool,
@@ -13,13 +13,13 @@ pub struct Game {
 
 impl Game {
     pub fn new(window: &Window, renderer: Renderer) -> Self {
-        let renderer2d = renderer;
-        let texture = Texture::from_path(&renderer2d.device, &renderer2d.queue, "assets/images/rust.png", "happy-tree.png").unwrap();
+        let renderer = renderer;
+        let texture = Texture::from_path(&renderer.device, &renderer.queue, "assets/images/rust.png", "happy-tree.png").unwrap();
         let camera = Camera {
             eye: (0.0, 0.0, 2.0).into(),
             target: glam::Vec3::ZERO,
             up: glam::Vec3::Y,
-            aspect: renderer2d.config.width as f32 / renderer2d.config.height as f32,
+            aspect: renderer.config.width as f32 / renderer.config.height as f32,
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
@@ -27,11 +27,11 @@ impl Game {
         };
 
         let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
-        let texture = Texture::from_image(&renderer2d.device, &renderer2d.queue,
+        let texture = Texture::from_image(&renderer.device, &renderer.queue,
             &font.get_image("This is RustType rendered into a png!", 32.0, (150, 0, 0)), "text_texture").unwrap();
 
         Self {
-            renderer2d,
+            renderer,
             texture,
             camera,
             cursor_locked: false,
@@ -48,7 +48,7 @@ impl Loop for Game {
             println!("UPS: {:.2}", 1.0 / delta);
         }
         if let Some(size) = input.window_resized() {
-            self.renderer2d.resize(size);
+            self.renderer.resize(size);
         }
 
         if input.key_held(VirtualKeyCode::W) {
@@ -104,7 +104,12 @@ impl Loop for Game {
         }
     }
 
-    fn render(&mut self, window: &mut Window) {  
-        self.renderer2d.render_texture(&self.texture, &self.camera);
+    fn render(&mut self, window: &mut Window) {
+        let scale = glam::Vec3::new(1.0, 1.0, 1.0);
+        let translation = glam::Vec3::new(0.0, 0.0, 0.0);
+        let quat = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
+        let model = glam::Mat4::from_scale_rotation_translation(scale, quat, translation);
+
+        self.renderer.render_texture(&self.texture, &self.camera, model);
     }
 }
