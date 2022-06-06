@@ -97,7 +97,7 @@ impl MainLoop {
                     _ => {}
                 },
                 Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                    loops.render(&mut self.window);                    
+                    loops.render(&mut self.window);                   
                 },
                 Event::MainEventsCleared => {
                     if self.input.mouse_lock {
@@ -116,10 +116,9 @@ impl MainLoop {
 
                     // UPDATE
                     let now = Instant::now();
-                    let delta = now.duration_since(last).as_millis() as f64 / 1000.0;
+                    let delta = now.duration_since(last).as_micros() as f64 / 1000000.0;
                     loops.update(&mut self.window, delta, &mut self.input);
                     last = now;
-
                     // RENDER
                     self.window.request_redraw();
                 },

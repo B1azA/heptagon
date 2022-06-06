@@ -3,7 +3,7 @@ struct Mat4Uniform {
     matrix: mat4x4<f32>;
 };
 
-[[group(1), binding(0)]] // 1.
+[[group(1), binding(0)]]
 var<uniform> mvp: Mat4Uniform;
 
 struct VertexInput {
@@ -20,7 +20,7 @@ struct VertexOutput {
 fn vs_main(model: VertexInput,) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = mvp.matrix * vec4<f32>(model.position, 1.0); // 2.
+    out.clip_position = mvp.matrix * vec4<f32>(model.position, 1.0);
     return out;
 }
 

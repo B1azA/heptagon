@@ -104,8 +104,19 @@ impl Loop for Game {
         }
     }
 
-    fn render(&mut self, window: &mut Window) {
-        let scale = glam::Vec3::new(1.0, 1.0, 1.0);
+    fn render(&mut self, window: &mut Window) {        
+        let size = window.inner_size();
+        let size = (size.width as f32, size.height as f32);
+
+        let mut scale = glam::Vec3::ONE; // scales with window
+        if size.0 > size.1 {
+            let x_scale = size.1 / size.0;
+            scale.x = x_scale;
+        } else if size.0 < size.1 {
+            let y_scale = size.0 / size.1;
+            scale.y = y_scale;
+        }
+
         let translation = glam::Vec3::new(0.0, 0.0, 0.0);
         let quat = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
         let model = glam::Mat4::from_scale_rotation_translation(scale, quat, translation);
