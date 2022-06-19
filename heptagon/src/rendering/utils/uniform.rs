@@ -73,9 +73,9 @@ pub struct Mat4Uniform {
 }
 
 impl Mat4Uniform {
-    pub fn new(model: glam::Mat4, view: glam::Mat4, proj: glam::Mat4) -> Self {
+    pub fn new(mat: glam::Mat4) -> Self {
         Self {
-            matrix: proj * view * model,
+            matrix: mat,
         }
     }
 

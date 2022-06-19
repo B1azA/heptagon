@@ -1,20 +1,22 @@
-use std::time::{Instant};
+use std::time::{Instant, Duration};
 
 use winit::dpi::{Size, PhysicalSize};
 use winit::{
     event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::{ WindowBuilder},
+    event_loop::ControlFlow
 };
+
+use game_loop::game_loop;
+use game_loop::winit::event::{Event, WindowEvent};
+use game_loop::winit::event_loop::EventLoop;
+use game_loop::winit::window::{WindowBuilder};
 
 pub mod input;
 
 pub use input::*;
-pub use winit::window::Window;
 pub use winit;
-pub use winit::event::VirtualKeyCode;
+pub use winit::window::Window;
 pub use crate::rendering::renderer::*;
-pub use winit_input_helper::WinitInputHelper;
 pub use glam;
 
 pub struct MainLoop {
@@ -113,12 +115,13 @@ impl MainLoop {
                             self.input.mouse_difference = (0.0, 0.0);
                         }
                     }
-
+                    
                     // UPDATE
                     let now = Instant::now();
-                    let delta = now.duration_since(last).as_micros() as f64 / 1000000.0;
+                    let delta = now.duration_since(last).as_micros() as f32 / 1000000.0;
                     loops.update(&mut self.window, delta, &mut self.input);
                     last = now;
+                    
                     // RENDER
                     self.window.request_redraw();
                 },
@@ -127,10 +130,27 @@ impl MainLoop {
             }
         });
     }
+
+    pub fn runrun(self, loops: impl Loop + std::marker::Send + 'static) {
+        let mut last = Instant::now();
+        game_loop(self.event_loop, self.window, (Input::new(), loops), 1000, 1.0, move |g| {
+            let now = Instant::now();
+            let delta = now.duration_since(last).as_micros() as f32 / 1000000.0;
+            g.game.1.update(&mut g.window, delta, &mut g.game.0);
+            last = now;
+        }, |g| {
+            g.game.1.render(&mut g.window);
+        }, |g, event| {
+            g.game.0.update(event);
+            if g.game.0.quit() {
+                g.exit_next_iteration = true;
+            }
+        });
+    }
 }
 
 pub trait Loop {
     fn init(&mut self, window: &mut Window);
-    fn update(&mut self, window: &mut Window, delta: f64, input: &mut Input);
+    fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input);
     fn render(&mut self, window: &mut Window);
 }

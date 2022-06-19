@@ -52,4 +52,8 @@ impl Input {
     pub fn mouse_lock(&mut self, lock: bool) {
         self.mouse_lock = lock;
     }
+
+    pub fn quit(&self) -> bool {
+        self.input_helper.quit()
+    }
 }

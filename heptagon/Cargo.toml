@@ -16,6 +16,7 @@ anyhow = "1.0.57"
 winit_input_helper = "0.12.0"
 glam = "0.20.5"
 rusttype = "0.9.2"
+game-loop = { version = "0.9.1", features = ["window"] }
 
 [dependencies.image]
 version = "0.24.2"

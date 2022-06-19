@@ -157,8 +157,8 @@ impl Renderer {
         Self::custom_new(surface, device, queue, config)
     }
 
-    pub fn render_texture(&self, texture: &Texture, camera: &Camera, model: glam::Mat4) {
-        let mvp_bind_group = Mat4Uniform::new(model, camera.get_view_mat(), camera.get_projection_mat()).get_bind_group(&self.device);
+    pub fn render_texture(&self, texture: &Texture, view: glam::Mat4, projection: glam::Mat4, model: glam::Mat4) {
+        let mvp_bind_group = Mat4Uniform::new(projection * view * model).get_bind_group(&self.device);
         let diffuse_bind_group = texture.bind_group(&self.device);
         let output = self.surface.get_current_texture().unwrap();
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
