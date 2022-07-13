@@ -20,6 +20,11 @@ impl Texture {
         Self::from_image(device, queue, &img, label)
     }
 
+    pub fn empty(device: &wgpu::Device, queue: &wgpu::Queue, dimensions: (u32, u32), label: &str) -> Result<Self> {
+        let img = image::DynamicImage::new_rgba8(dimensions.0, dimensions.1);
+        Self::from_image(device, queue, &img, label)
+    }
+
     pub fn from_image(device: &wgpu::Device, queue: &wgpu::Queue, 
         img: &image::DynamicImage, label: &str) -> Result<Self> {
         let rgba = img.to_rgba8();
@@ -37,8 +42,8 @@ impl Texture {
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
             }
         );
 
@@ -74,7 +79,7 @@ impl Texture {
         Ok(Self { texture, view, sampler })
     }
 
-    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -100,9 +105,9 @@ impl Texture {
         )
     }
 
-    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::bind_group_layout(device),
+            layout: &Self::get_bind_group_layout(device),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -117,7 +122,7 @@ impl Texture {
         })
     }
 
-    pub fn bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
+    pub fn get_bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &layout,
             entries: &[
@@ -132,5 +137,9 @@ impl Texture {
             ],
             label: Some("diffuse_bind_group"),
         })
+    }
+
+    pub fn get_view(&self) -> wgpu::TextureView {
+        self.texture.create_view(&wgpu::TextureViewDescriptor::default())
     }
 }

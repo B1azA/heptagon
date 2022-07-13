@@ -1,58 +1,127 @@
+use wgpu_glyph::ab_glyph;
+
 pub struct Font {
-    font: rusttype::Font<'static>,
+    brush: wgpu_glyph::GlyphBrush<()>,
+    pub staging_belt: wgpu::util::StagingBelt,
 }
 
 impl Font {
-    pub fn from_path(path: &str) -> Self {
-        let bytes = std::fs::read(path).unwrap();
-        let font = rusttype::Font::try_from_vec(bytes).expect("Error loading a font");
+    pub fn from_bytes(bytes: Vec<u8>, device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
+        let font = ab_glyph::FontArc::try_from_vec(bytes).unwrap();
+        let glyph_brush = wgpu_glyph::GlyphBrushBuilder::using_font(font.clone())
+            .build(device, format);
+
+        let staging_belt = wgpu::util::StagingBelt::new(1024);
+        
         Self {
-            font,
+            brush: glyph_brush,
+            staging_belt,
         }
     }
 
-    pub fn from_bytes(bytes: Vec<u8>) -> Self {
-        let font = rusttype::Font::try_from_vec(bytes).expect("Error loading a font");
-        Self {
-            font,
-        }
+    pub fn from_path(path: &str, device: &wgpu::Device, format: wgpu::TextureFormat) -> Self {
+        let bytes: Vec<u8> = std::fs::read(path).unwrap();
+        Self::from_bytes(bytes, device, format)
     }
 
-    pub fn get_image(&self, text: &str, scale: f32, color: (u8, u8, u8)) -> image::DynamicImage {
-        let scale = rusttype::Scale::uniform(scale);
-        let v_metrics = self.font.v_metrics(scale);
-        let glyphs: Vec<_> = self.font.layout(text, scale, rusttype::point(20.0, 20.0 + v_metrics.ascent)).collect();
-        let glyphs_height = (v_metrics.ascent - v_metrics.descent).ceil() as u32;
-        let glyphs_width = {
-            let min_x = glyphs
-                .first()
-                .map(|g| g.pixel_bounding_box().unwrap().min.x)
-                .unwrap();
-            let max_x = glyphs
-                .last()
-                .map(|g| g.pixel_bounding_box().unwrap().max.x)
-                .unwrap();
-            (max_x - min_x) as u32
-        };
-        let mut img = image::DynamicImage::new_rgba8(glyphs_width + 40, glyphs_height + 40);
-        let image = img.as_mut_rgba8().unwrap();
-
-        // Loop through the glyphs in the text, positing each one on a line
-        for glyph in glyphs {
-            if let Some(bounding_box) = glyph.pixel_bounding_box() {
-                // Draw the glyph into the image per-pixel by using the draw closure
-                glyph.draw(|x, y, v| {
-                    image.put_pixel(
-                        // Offset the position by the glyph bounding box
-                        x + bounding_box.min.x as u32,
-                        y + bounding_box.min.y as u32,
-                        // Turn the coverage into an alpha value
-                        image::Rgba([color.0, color.1, color.2, (v * 255.0) as u8]),
-                    )
-                });
+    pub fn queue(&mut self, position: glam::Vec2, bounds: glam::Vec2, text: &str) {
+        self.brush.queue(
+            wgpu_glyph::Section {
+                screen_position: (position.x, position.y),
+                bounds: (bounds.x, bounds.y),
+                text: vec![wgpu_glyph::Text::new(text)
+                    .with_color([1.0, 1.0, 1.0, 1.0])
+                    .with_scale(40.0)],
+                ..wgpu_glyph::Section::default()
             }
+        );        
+    }
+
+    pub fn render(&mut self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, 
+        view: &wgpu::TextureView, size: (u32, u32)) {
+        
+        self.brush.draw_queued(device, &mut self.staging_belt, encoder, view, size.0, size.1).unwrap();
+        self.staging_belt.finish();
+    }
+
+    pub fn get_texture(&mut self, dimensions: (u32, u32),
+        device: &wgpu::Device, queue: &wgpu::Queue, 
+        label: &str) -> super::texture::Texture {
+        
+        let texture = super::texture::Texture::empty(device, queue, dimensions, label).unwrap();
+        let view = texture.get_view();
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Text Encoder"),
+        }); 
+
+        {
+            let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[
+                    wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(
+                                wgpu::Color {
+                                    r: 0.1,
+                                    g: 0.2,
+                                    b: 0.3,
+                                    a: 1.0,
+                                }
+                            ),
+                            store: true,
+                        }
+                    }
+                ],
+                depth_stencil_attachment: None,
+            });
         }
 
-        img
+        self.queue(glam::Vec2::new(10.0, 10.0), glam::Vec2::new(100.0, 100.0), "Hello");
+        self.render(device, &mut encoder, &view, dimensions);
+        queue.submit(Some(encoder.finish()));
+        // async_std::task::block_on(self.staging_belt.recall());
+
+        texture
     }
+
+    // pub fn render_text(&mut self, font: &mut Font, size: (u32, u32)) {
+        
+    //     let output = self.surface.get_current_texture().unwrap();
+    //     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+    //     let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+    //         label: Some("Render Encoder"),
+    //     });
+
+    //     {
+    //         let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+    //             label: Some("Render Pass"),
+    //             color_attachments: &[
+    //                 wgpu::RenderPassColorAttachment {
+    //                     view: &view,
+    //                     resolve_target: None,
+    //                     ops: wgpu::Operations {
+    //                         load: wgpu::LoadOp::Clear(
+    //                             wgpu::Color {
+    //                                 r: 0.1,
+    //                                 g: 0.2,
+    //                                 b: 0.3,
+    //                                 a: 1.0,
+    //                             }
+    //                         ),
+    //                         store: true,
+    //                     }
+    //                 }
+    //             ],
+    //             depth_stencil_attachment: None,
+    //         });
+    //     }
+
+    //     font.queue(glam::Vec2::new(10.0, 10.0), glam::Vec2::new(100.0, 100.0), "Hello");
+    //     font.render(&self.device, &mut self.staging_belt, &mut encoder, &view, size);
+    //     self.queue.submit(Some(encoder.finish()));
+    //     output.present();
+    //     async_std::task::block_on(self.staging_belt.recall());
+    // }
 }

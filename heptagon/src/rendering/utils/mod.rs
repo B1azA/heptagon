@@ -16,6 +16,9 @@ pub use camera::*;
 pub mod projection;
 pub use projection::*;
 
+pub mod model;
+pub use model::*;
+
 pub mod text;
 pub use text::*;
 

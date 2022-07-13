@@ -133,7 +133,7 @@ impl MainLoop {
 
     pub fn runrun(self, loops: impl Loop + std::marker::Send + 'static) {
         let mut last = Instant::now();
-        game_loop(self.event_loop, self.window, (Input::new(), loops), 1000, 1.0, move |g| {
+        game_loop(self.event_loop, self.window, (Input::new(), loops), 240, 0.1, move |g| {
             let now = Instant::now();
             let delta = now.duration_since(last).as_micros() as f32 / 1000000.0;
             g.game.1.update(&mut g.window, delta, &mut g.game.0);
