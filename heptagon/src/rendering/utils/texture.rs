@@ -10,23 +10,31 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn from_path(device: &wgpu::Device, queue: &wgpu::Queue, path: &str, label: &str) -> Result<Self> {
+    pub fn from_path(device: &wgpu::Device, queue: &wgpu::Queue, path: &str, label: &str,
+        format: Option<wgpu::TextureFormat>) -> Result<Self> {
+
         let bytes = std::fs::read(path).unwrap();
-        Self::from_bytes(&device, &queue, &bytes, label)
+        Self::from_bytes(&device, &queue, &bytes, label, format)
     }
 
-    pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str) -> Result<Self> {
+    pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str,
+        format: Option<wgpu::TextureFormat>) -> Result<Self> {
+
         let img = image::load_from_memory(bytes).unwrap();
-        Self::from_image(device, queue, &img, label)
+        Self::from_image(device, queue, &img, label, format)
     }
 
-    pub fn empty(device: &wgpu::Device, queue: &wgpu::Queue, dimensions: (u32, u32), label: &str) -> Result<Self> {
+    pub fn empty(device: &wgpu::Device, queue: &wgpu::Queue, dimensions: (u32, u32), label: &str,
+        format: Option<wgpu::TextureFormat>) -> Result<Self> {
+
         let img = image::DynamicImage::new_rgba8(dimensions.0, dimensions.1);
-        Self::from_image(device, queue, &img, label)
+        Self::from_image(device, queue, &img, label, format)
     }
 
     pub fn from_image(device: &wgpu::Device, queue: &wgpu::Queue, 
-        img: &image::DynamicImage, label: &str) -> Result<Self> {
+        img: &image::DynamicImage, label: &str,
+        format: Option<wgpu::TextureFormat>) -> Result<Self> {
+
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
 
@@ -35,6 +43,12 @@ impl Texture {
             height: dimensions.1,
             depth_or_array_layers: 1,
         };
+
+        let mut texture_format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        if let Some(txt_format) = format {
+            texture_format = txt_format;
+        }
+
         let texture = device.create_texture(
             &wgpu::TextureDescriptor {
                 label: Some(label),
@@ -42,7 +56,7 @@ impl Texture {
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                format: texture_format,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::RENDER_ATTACHMENT,
             }
         );

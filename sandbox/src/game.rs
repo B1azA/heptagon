@@ -1,10 +1,12 @@
 use heptagon::main_loop::*;
 use heptagon::rendering::wgpu;
 use heptagon::rendering::utils::*;
+use heptagon::rendering::graphics::render_queue::RenderQueue;
 
 pub struct Game<'a> {
     renderer: Renderer<'a>,
     texture: Texture,
+    texture2: Texture,
     camera: Camera,
     projection: Projection,
     cursor_locked: bool,
@@ -15,7 +17,8 @@ pub struct Game<'a> {
 
 impl<'a> Game<'a> {
     pub fn new(window: &Window, renderer: Renderer<'a>) -> Self {
-        let texture = Texture::from_path(&renderer.device, &renderer.queue, "assets/images/rust.png", "happy-tree.png").unwrap();
+        let texture2 = Texture::from_path(&renderer.device, &renderer.queue,
+            "assets/images/rust.png", "happy-tree.png", None).unwrap();
 
         let camera = Camera::new(glam::Vec3::new(0.0, 0.0, 2.0), glam::Vec3::new(0.0, 0.0, 1.0));
         let mut font = Font::from_path("assets/fonts/Roboto-Regular.ttf", &renderer.device, renderer.config.format);
@@ -27,6 +30,7 @@ impl<'a> Game<'a> {
         Self {
             renderer,
             texture,
+            texture2,
             camera,
             projection,
             cursor_locked: false,
@@ -114,34 +118,45 @@ impl<'a> Loop for Game<'a> {
             self.pitch = self.camera.get_pitch();
         }
     }
-
+    
     fn render(&mut self, window: &mut Window) {
+        
         let scale = glam::Vec3::ONE;
         let translation = glam::Vec3::new(0.0, 0.0, 0.0);
         let rotation = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
         let model = Model::new(scale, translation, rotation);
 
-        // self.renderer.render_texture(&self.texture, self.camera.get_view_mat(), 
-        // self.projection.get_projection_mat(), model.get_model_mat());
-
-        // let scale = glam::Vec3::ONE;
-        // let translation = glam::Vec3::new(0.0, 0.0, -10.0);
-        // let rotation = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
-        // let model = Model::new(scale, translation, rotation);
-
-
-        // self.renderer.render_texture(&self.texture, self.camera.get_view_mat(), 
-        // self.projection.get_projection_mat(), model.get_model_mat());
-
-        let encoder = self.renderer.make_render_bundle_encoder();
-        let texture_bind_group = self.texture.get_bind_group(&self.renderer.device);
         let mvp_bind_group = Mat4Uniform::new(
             self.projection.get_projection_mat() * 
             self.camera.get_view_mat() * model.get_model_mat()).get_bind_group(&self.renderer.device);
+        let texture_bind_group = self.texture.get_bind_group(&self.renderer.device);
 
-        let render_bundle = self.renderer.make_render_bundle(encoder, 
-            &texture_bind_group, &mvp_bind_group);
+        let mut render_queue = RenderQueue::begin(&self.renderer.device);
 
-        self.renderer.run_render_bundles(&[render_bundle]);
+        render_queue = render_queue.render_texture(
+            &self.renderer.render_pipeline,
+            self.renderer.vertex_buffer.slice(..),
+            self.renderer.index_buffer.slice(..),
+            self.renderer.indices.len() as u32,
+            &texture_bind_group,
+            &mvp_bind_group,
+        );
+
+        let texture_bind_group2 = self.texture2.get_bind_group(&self.renderer.device);
+
+        render_queue = render_queue.render_texture(
+            &self.renderer.render_pipeline,
+            self.renderer.vertex_buffer.slice(..),
+            self.renderer.index_buffer.slice(..),
+            self.renderer.indices.len() as u32,
+            &texture_bind_group2,
+            &mvp_bind_group,
+        );
+        
+        let bundle = render_queue.finish();
+
+        self.renderer.run_render_bundles(&[bundle]);
+
+        // self.renderer.render_text(&mut self.font, window.inner_size().try_into().unwrap());
     }
 }

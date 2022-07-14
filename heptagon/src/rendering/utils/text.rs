@@ -1,7 +1,7 @@
 use wgpu_glyph::ab_glyph;
 
 pub struct Font {
-    brush: wgpu_glyph::GlyphBrush<()>,
+    pub brush: wgpu_glyph::GlyphBrush<()>,
     pub staging_belt: wgpu::util::StagingBelt,
 }
 
@@ -34,10 +34,17 @@ impl Font {
                     .with_scale(40.0)],
                 ..wgpu_glyph::Section::default()
             }
-        );        
+        );     
     }
 
     pub fn render(&mut self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, 
+        view: &wgpu::TextureView, size: (u32, u32)) {
+        
+        self.brush.draw_queued(device, &mut self.staging_belt, encoder, view, size.0, size.1).unwrap();
+        self.staging_belt.finish();
+    }
+
+    pub fn render_bundle(&mut self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, 
         view: &wgpu::TextureView, size: (u32, u32)) {
         
         self.brush.draw_queued(device, &mut self.staging_belt, encoder, view, size.0, size.1).unwrap();
@@ -48,7 +55,8 @@ impl Font {
         device: &wgpu::Device, queue: &wgpu::Queue, 
         label: &str) -> super::texture::Texture {
         
-        let texture = super::texture::Texture::empty(device, queue, dimensions, label).unwrap();
+        let texture = super::texture::Texture::empty(device, queue, dimensions,
+            label, Some(wgpu::TextureFormat::Bgra8UnormSrgb)).unwrap();
         let view = texture.get_view();
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Text Encoder"),
