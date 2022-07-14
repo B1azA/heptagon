@@ -19,8 +19,8 @@ pub use projection::*;
 pub mod model;
 pub use model::*;
 
-pub mod text;
-pub use text::*;
+pub mod font;
+pub use font::*;
 
 pub mod uniform;
 pub use uniform::*;

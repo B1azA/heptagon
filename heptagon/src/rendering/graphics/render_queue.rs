@@ -35,35 +35,6 @@ impl<'a> RenderQueue<'a> {
         self
     }
 
-    pub fn render_text(mut self, font: &mut crate::rendering::utils::text::Font,
-        position: glam::Vec2,
-        bounds: glam::Vec2,
-        size: (u32, u32),
-        text: &str,
-        encoder: &mut wgpu::CommandEncoder,
-        view: &wgpu::TextureView,
-        device: &wgpu::Device) -> Self {
-        
-
-        // color and scale
-        font.brush.queue(
-            wgpu_glyph::Section {
-                screen_position: (position.x, position.y),
-                bounds: (bounds.x, bounds.y),
-                text: vec![wgpu_glyph::Text::new(text)
-                    .with_color([1.0, 1.0, 1.0, 1.0])
-                    .with_scale(40.0)],
-                ..wgpu_glyph::Section::default()
-            }
-        );
-
-        font.brush.draw_queued(device, &mut font.staging_belt, encoder, view, size.0, size.1).unwrap();
-        
-        font.staging_belt.finish();
-
-        self
-    }
-
     pub fn finish(self) -> wgpu::RenderBundle {
         self.encoder.finish(&wgpu::RenderBundleDescriptor {
             label: Some("Render Queue"),

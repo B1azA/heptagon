@@ -194,45 +194,6 @@ impl<'a> Renderer<'a> {
         output.present();
     }
 
-    pub fn render_text(&mut self, font: &mut Font, size: (u32, u32)) {
-        
-        let output = self.surface.get_current_texture().unwrap();
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        });
-
-        {
-            let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[
-                    Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(
-                                wgpu::Color {
-                                    r: 0.1,
-                                    g: 0.2,
-                                    b: 0.3,
-                                    a: 1.0,
-                                }
-                            ),
-                            store: true,
-                        }
-                    })
-                ],
-                depth_stencil_attachment: None,
-            });
-        }
-
-        font.queue(glam::Vec2::new(10.0, 10.0), glam::Vec2::new(100.0, 100.0), "Hello");
-        font.render(&self.device, &mut encoder, &view, size);
-        self.queue.submit(Some(encoder.finish()));
-        output.present();
-        font.staging_belt.recall();
-    }
-
     pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
         if size.width > 0 && size.height > 0 {
             self.size = size;

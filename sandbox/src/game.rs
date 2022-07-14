@@ -18,14 +18,15 @@ pub struct Game<'a> {
 impl<'a> Game<'a> {
     pub fn new(window: &Window, renderer: Renderer<'a>) -> Self {
         let texture2 = Texture::from_path(&renderer.device, &renderer.queue,
-            "assets/images/rust.png", "happy-tree.png", None).unwrap();
+            "assets/images/rust.png", "happy-tree.png").unwrap();
 
         let camera = Camera::new(glam::Vec3::new(0.0, 0.0, 2.0), glam::Vec3::new(0.0, 0.0, 1.0));
-        let mut font = Font::from_path("assets/fonts/Roboto-Regular.ttf", &renderer.device, renderer.config.format);
 
         let projection = Projection::new(renderer.config.width, renderer.config.height, 0.785398163, 0.1, 100.0);
+        
+        let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
 
-        let texture = font.get_texture((512, 512), &renderer.device, &renderer.queue, "font texture");
+        let texture = font.create_texture(&renderer.device, &renderer.queue);
 
         Self {
             renderer,
