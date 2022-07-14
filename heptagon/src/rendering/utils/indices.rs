@@ -1,7 +1,8 @@
 use wgpu::util::DeviceExt;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Indices<'a, T> {
-    pub indices: &'a [T],
+    indices: &'a [T],
 }
 
 impl<'a, T> Indices<'a, T> {
@@ -22,7 +23,7 @@ impl<'a, T> Indices<'a, T> {
         }
     }
 
-    pub fn to_index_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
+    pub fn index_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
@@ -31,5 +32,9 @@ impl<'a, T> Indices<'a, T> {
             }
         );
         index_buffer
+    }
+
+    pub fn indices(&self) -> &'a [T] {
+        &self.indices
     }
 }

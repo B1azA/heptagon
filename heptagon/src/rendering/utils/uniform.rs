@@ -11,11 +11,19 @@ impl<T> Uniform<T> {
         }
     }
 
-    pub fn update(&mut self, data: T) {
+    pub fn data(&self) -> &T {
+        &self.data
+    }
+
+    pub fn data_mut(&mut self) -> &mut T {
+        &mut self.data
+    }
+
+    pub fn set_data(&mut self, data: T) {
         self.data = data;
     }
 
-    pub fn get_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
+    pub fn buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
         device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Uniform buffer"),
@@ -25,7 +33,7 @@ impl<T> Uniform<T> {
         )
     }
 
-    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -45,13 +53,13 @@ impl<T> Uniform<T> {
         )
     }
 
-    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::get_bind_group_layout(device),
+            layout: &Self::bind_group_layout(device),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: self.get_buffer(device).as_entire_binding(),
+                    resource: self.buffer(device).as_entire_binding(),
                 }
             ],
             label: Some("Uniform bind group"),
@@ -86,12 +94,12 @@ impl Mat4Uniform {
         }
     }
 
-    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
         let uniform = Uniform::new(*self);
-        uniform.get_bind_group(device)
+        uniform.bind_group(device)
     }
 
-    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        Uniform::<Self>::get_bind_group_layout(device)
+    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+        Uniform::<Self>::bind_group_layout(device)
     }
 }

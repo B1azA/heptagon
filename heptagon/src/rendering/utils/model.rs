@@ -13,19 +13,19 @@ impl Model {
         }
     }
 
-    pub fn get_model_mat(&self) -> glam::Mat4 {
+    pub fn model_mat(&self) -> glam::Mat4 {
         glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
     }
 
-    pub fn get_scale(&self) -> glam::Vec3 {
+    pub fn scale(&self) -> glam::Vec3 {
         self.scale
     }
 
-    pub fn get_translation(&self) -> glam::Vec3 {
+    pub fn translation(&self) -> glam::Vec3 {
         self.translation
     }
 
-    pub fn get_rotation(&self) -> glam::Quat {
+    pub fn rotation(&self) -> glam::Quat {
         self.rotation
     }
 

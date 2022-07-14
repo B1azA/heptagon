@@ -1,26 +1,44 @@
-use wgpu::util::DeviceExt;
-use image::GenericImageView;
 use crate::rendering::utils::*;
 
-pub struct Renderer<'a> {
-    pub surface: wgpu::Surface,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub config: wgpu::SurfaceConfiguration,
-    pub size: winit::dpi::PhysicalSize<u32>,
+pub struct Renderer {
+    surface: wgpu::Surface,
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    config: wgpu::SurfaceConfiguration,
+    size: winit::dpi::PhysicalSize<u32>,
     pub render_pipeline: wgpu::RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
-    _vertices: Vertices<'a, VertexTex>,
-    pub indices: Indices<'a, u16>,
+    pub indices_count: usize,
 }
 
-impl<'a> Renderer<'a> {
+impl Renderer {
+    pub fn surface(&self) -> &wgpu::Surface {
+        &self.surface
+    }
+
+    pub fn device(&self) -> &wgpu::Device {
+        &self.device
+    }
+
+    pub fn queue(&self) -> &wgpu::Queue {
+        &self.queue
+    }
+
+    pub fn config(&self) -> &wgpu::SurfaceConfiguration {
+        &self.config
+    }
+
+    pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
+        self.size
+    }
+
     pub fn custom_new(surface: wgpu::Surface, device: wgpu::Device, queue: wgpu::Queue, config: wgpu::SurfaceConfiguration) -> Self {
         async_std::task::block_on(Self::custom_newnew(surface, device, queue, config))
     }
 
-    async fn custom_newnew(surface: wgpu::Surface, device: wgpu::Device, queue: wgpu::Queue, config: wgpu::SurfaceConfiguration) -> Renderer<'a> {
+    async fn custom_newnew(surface: wgpu::Surface, device: wgpu::Device, queue: wgpu::Queue,
+        config: wgpu::SurfaceConfiguration) -> Renderer {
 
         surface.configure(&device, &config);
 
@@ -35,7 +53,8 @@ impl<'a> Renderer<'a> {
                 2, 3, 0,
             ]
         );
-        
+
+        let indices_count = indices.len();
         let vertices = Vertices::new(
             &[
                 VertexTex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], }, // A
@@ -45,13 +64,13 @@ impl<'a> Renderer<'a> {
             ]
         );
 
-        let vertex_buffer = vertices.to_vertex_buffer(&device);
+        let vertex_buffer = vertices.vertex_buffer(&device);
 
-        let index_buffer = indices.to_index_buffer(&device);
+        let index_buffer = indices.index_buffer(&device);
 
-        let texture_bind_group_layout = Texture::get_bind_group_layout(&device);
+        let texture_bind_group_layout = Texture::bind_group_layout(&device);
  
-        let mvp_bind_group_layout = Mat4Uniform::get_bind_group_layout(&device);
+        let mvp_bind_group_layout = Mat4Uniform::bind_group_layout(&device);
         
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
@@ -69,7 +88,7 @@ impl<'a> Renderer<'a> {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[
-                    Vertices::<VertexTex>::layout(),
+                    vertices.buffer_layout(),
                 ],
             },
             fragment: Some(wgpu::FragmentState {
@@ -110,8 +129,7 @@ impl<'a> Renderer<'a> {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            _vertices: vertices,
-            indices,
+            indices_count,
         }
     }
 
@@ -119,7 +137,7 @@ impl<'a> Renderer<'a> {
         async_std::task::block_on(Self::newnew(window))
     }
     
-    async fn newnew(window: &winit::window::Window) -> Renderer<'a> {
+    async fn newnew(window: &winit::window::Window) -> Renderer {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::Backends::all());

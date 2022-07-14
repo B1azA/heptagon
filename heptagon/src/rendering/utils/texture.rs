@@ -4,12 +4,56 @@ use std::fs::File;
 use std::path::Path;
 
 pub struct Texture {
-    pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
+    texture: wgpu::Texture,
+    view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
 }
 
 impl Texture {
+    pub fn texture(&self) -> &wgpu::Texture {
+        &self.texture
+    }
+
+    pub fn texture_mut(&mut self) -> &mut wgpu::Texture {
+        &mut self.texture
+    }
+
+    pub fn set_texture(&mut self, texture: wgpu::Texture) {
+        self.texture = texture;
+    }
+
+    pub fn view(&self) -> &wgpu::TextureView {
+        &self.view
+    }
+
+    pub fn view_mut(&mut self) -> &mut wgpu::TextureView {
+        &mut self.view
+    }
+
+    pub fn set_view(&mut self, view: wgpu::TextureView) {
+        self.view = view;
+    }
+
+    pub fn sampler(&self) -> &wgpu::Sampler {
+        &self.sampler
+    }
+
+    pub fn sampler_mut(&mut self) -> &mut wgpu::Sampler {
+        &mut self.sampler
+    }
+
+    pub fn set_sampler(&mut self, sampler: wgpu::Sampler) {
+        self.sampler = sampler;
+    }
+
+    pub fn new(texture: wgpu::Texture, view: wgpu::TextureView, sampler: wgpu::Sampler) -> Self {
+        Self {
+            texture,
+            view,
+            sampler,
+        }
+    }
+
     pub fn from_path(device: &wgpu::Device, queue: &wgpu::Queue, path: &str, label: &str) -> Result<Self> {
 
         let bytes = std::fs::read(path).unwrap();
@@ -145,7 +189,8 @@ impl Texture {
     }
 
     pub fn from_bytes_custom(device: &wgpu::Device, queue: &wgpu::Queue, label: &str,
-        format: wgpu::TextureFormat, bytes: &[u8], dimensions: (u32, u32), bytes_per_pixel: u8) -> Result<Self> {
+        format: wgpu::TextureFormat, bytes: &[u8], dimensions: (u32, u32), bytes_per_pixel: u8,
+        usage: wgpu::TextureUsages) -> Result<Self> {
 
             let size = wgpu::Extent3d {
                 width: dimensions.0,
@@ -163,7 +208,7 @@ impl Texture {
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
                     format: texture_format,
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    usage,
                 }
             );
     
@@ -199,7 +244,7 @@ impl Texture {
             Ok(Self { texture, view, sampler })
     }
 
-    pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &[
@@ -225,9 +270,9 @@ impl Texture {
         )
     }
 
-    pub fn get_bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
+    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::get_bind_group_layout(device),
+            layout: &Self::bind_group_layout(device),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -242,7 +287,7 @@ impl Texture {
         })
     }
 
-    pub fn get_bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
+    pub fn bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &layout,
             entries: &[
@@ -257,9 +302,5 @@ impl Texture {
             ],
             label: Some("diffuse_bind_group"),
         })
-    }
-
-    pub fn get_view(&self) -> wgpu::TextureView {
-        self.texture.create_view(&wgpu::TextureViewDescriptor::default())
     }
 }

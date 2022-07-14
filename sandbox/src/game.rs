@@ -3,8 +3,8 @@ use heptagon::rendering::wgpu;
 use heptagon::rendering::utils::*;
 use heptagon::rendering::graphics::render_queue::RenderQueue;
 
-pub struct Game<'a> {
-    renderer: Renderer<'a>,
+pub struct Game {
+    renderer: Renderer,
     texture: Texture,
     texture2: Texture,
     camera: Camera,
@@ -15,18 +15,19 @@ pub struct Game<'a> {
     font: Font,
 }
 
-impl<'a> Game<'a> {
-    pub fn new(window: &Window, renderer: Renderer<'a>) -> Self {
-        let texture2 = Texture::from_path(&renderer.device, &renderer.queue,
+impl Game {
+    pub fn new(window: &Window, renderer: Renderer) -> Self {
+        let texture2 = Texture::from_path(renderer.device(), renderer.queue(),
             "assets/images/rust.png", "happy-tree.png").unwrap();
 
         let camera = Camera::new(glam::Vec3::new(0.0, 0.0, 2.0), glam::Vec3::new(0.0, 0.0, 1.0));
 
-        let projection = Projection::new(renderer.config.width, renderer.config.height, 0.785398163, 0.1, 100.0);
+        let projection = Projection::new(renderer.config().width, renderer.config().height,
+            0.785398163, 0.1, 100.0);
         
         let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
 
-        let texture = font.create_texture(&renderer.device, &renderer.queue);
+        let texture = font.create_texture(renderer.device(), renderer.queue());
 
         Self {
             renderer,
@@ -42,10 +43,7 @@ impl<'a> Game<'a> {
     }
 }
 
-impl<'a> Loop for Game<'a> {
-    fn init(&mut self, window: &mut Window) {
-    }
-
+impl Loop for Game {
     fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input) {
 
         let move_speed = 4.0;
@@ -61,20 +59,20 @@ impl<'a> Loop for Game<'a> {
         }
 
         if input.key_held(Key::W) {
-            let shift = self.camera.get_forward().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.get_position() + shift);
+            let shift = self.camera.forward().normalize() * delta * move_speed;
+            self.camera.set_position(self.camera.position() + shift);
         }
         if input.key_held(Key::S) {
-            let shift = self.camera.get_forward().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.get_position() - shift);
+            let shift = self.camera.forward().normalize() * delta * move_speed;
+            self.camera.set_position(self.camera.position() - shift);
         }
         if input.key_held(Key::A) {
-            let shift = self.camera.get_right().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.get_position() - shift);
+            let shift = self.camera.right().normalize() * delta * move_speed;
+            self.camera.set_position(self.camera.position() - shift);
         }
         if input.key_held(Key::D) {
-            let shift = self.camera.get_right().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.get_position() + shift);
+            let shift = self.camera.right().normalize() * delta * move_speed;
+            self.camera.set_position(self.camera.position() + shift);
         }
 
         
@@ -114,9 +112,9 @@ impl<'a> Loop for Game<'a> {
         }
 
         if input.key_pressed(Key::C) {
-            self.camera.set_direction(self.camera.get_position() - glam::Vec3::new(0.0, 0.0, -1.0));
-            self.yaw = self.camera.get_yaw();
-            self.pitch = self.camera.get_pitch();
+            self.camera.set_direction(self.camera.position() - glam::Vec3::new(0.0, 0.0, -1.0));
+            self.yaw = self.camera.yaw();
+            self.pitch = self.camera.pitch();
         }
     }
     
@@ -128,28 +126,28 @@ impl<'a> Loop for Game<'a> {
         let model = Model::new(scale, translation, rotation);
 
         let mvp_bind_group = Mat4Uniform::new(
-            self.projection.get_projection_mat() * 
-            self.camera.get_view_mat() * model.get_model_mat()).get_bind_group(&self.renderer.device);
-        let texture_bind_group = self.texture.get_bind_group(&self.renderer.device);
+            self.projection.projection_mat() * 
+            self.camera.view_mat() * model.model_mat()).bind_group(&self.renderer.device());
+        let texture_bind_group = self.texture.bind_group(&self.renderer.device());
 
-        let mut render_queue = RenderQueue::begin(&self.renderer.device);
+        let mut render_queue = RenderQueue::begin(&self.renderer.device());
 
         render_queue = render_queue.render_texture(
             &self.renderer.render_pipeline,
             self.renderer.vertex_buffer.slice(..),
             self.renderer.index_buffer.slice(..),
-            self.renderer.indices.len() as u32,
+            self.renderer.indices_count as u32,
             &texture_bind_group,
             &mvp_bind_group,
         );
 
-        let texture_bind_group2 = self.texture2.get_bind_group(&self.renderer.device);
+        let texture_bind_group2 = self.texture2.bind_group(&self.renderer.device());
 
         render_queue = render_queue.render_texture(
             &self.renderer.render_pipeline,
             self.renderer.vertex_buffer.slice(..),
             self.renderer.index_buffer.slice(..),
-            self.renderer.indices.len() as u32,
+            self.renderer.indices_count as u32,
             &texture_bind_group2,
             &mvp_bind_group,
         );

@@ -42,7 +42,6 @@ pub struct VertexTex {
     pub tex_coords: [f32; 2],
 }
 
-
 impl VertexTex {
     pub fn new(position: [f32; 3], tex_coords: [f32; 2]) -> Self {
         Self {
@@ -101,15 +100,24 @@ impl Vertex {
     }
 }
 
-pub struct Vertices<'a, T> {
-    pub vertices: &'a [T],
+#[derive(Debug, Copy, Clone)]
+pub struct Vertices<'a, T: VertexBufferLayout> {
+    vertices: &'a [T],
 }
 
-impl<'a, T> Vertices<'a, T> {
+impl<'a, T: VertexBufferLayout> Vertices<'a, T> {
     pub fn new(vertices: &'a [T]) -> Self {
         Self {
             vertices,
         }
+    }
+
+    pub fn vertices(&self) -> &'a [T] {
+        &self.vertices
+    }
+
+    pub fn set_vertices(&mut self, vertices: &'a [T]) {
+        self.vertices = vertices;
     }
 
     pub fn len(&self) -> usize {
@@ -123,7 +131,7 @@ impl<'a, T> Vertices<'a, T> {
         }
     }
 
-    pub fn to_vertex_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
+    pub fn vertex_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
@@ -133,26 +141,30 @@ impl<'a, T> Vertices<'a, T> {
         );
         vertex_buffer
     }
+
+    pub fn buffer_layout(&self) -> wgpu::VertexBufferLayout {
+        T::buffer_layout()
+    }
 }
 
-pub trait Layout {
-    fn layout<'a>() -> wgpu::VertexBufferLayout<'a>;
+pub trait VertexBufferLayout {
+    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
 }
 
-impl<'b> Layout for Vertices<'b, VertexTex> {
-    fn layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+impl VertexBufferLayout for VertexTex {
+    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         VertexTex::desc()
     }
 }
 
-impl<'b> Layout for Vertices<'b, Vertex> {
-    fn layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+impl VertexBufferLayout for Vertex {
+    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         Vertex::desc()
     }
 }
 
-impl<'b> Layout for Vertices<'b, VertexColor> {
-    fn layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+impl VertexBufferLayout for VertexColor {
+    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         VertexColor::desc()
     }
 }

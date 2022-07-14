@@ -41,11 +41,11 @@ impl MainLoop {
         }
     }
 
-    pub fn get_render_belongings(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
-        async_std::task::block_on(self.get_render_belongings_async())
+    pub fn render_belongings(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
+        async_std::task::block_on(self.render_belongings_async())
     }
 
-    async fn get_render_belongings_async(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
+    async fn render_belongings_async(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let surface = unsafe { instance.create_surface(&self.window) };
         let size = self.window.inner_size();
@@ -83,7 +83,6 @@ impl MainLoop {
 
     pub fn run(mut self, mut loops: impl Loop + std::marker::Send + 'static) {
         env_logger::init();
-        loops.init(&mut self.window);
 
         let mut last = Instant::now();
 
@@ -150,7 +149,6 @@ impl MainLoop {
 }
 
 pub trait Loop {
-    fn init(&mut self, window: &mut Window);
     fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input);
     fn render(&mut self, window: &mut Window);
 }
