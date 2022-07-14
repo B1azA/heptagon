@@ -24,7 +24,7 @@ impl<'a> Renderer<'a> {
 
         surface.configure(&device, &config);
 
-        let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
         });
@@ -75,11 +75,11 @@ impl<'a> Renderer<'a> {
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[wgpu::ColorTargetState {
+                targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
                     blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
-                }],
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -147,7 +147,7 @@ impl<'a> Renderer<'a> {
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_preferred_format(&adapter).unwrap(),
+            format: surface.get_supported_formats(&adapter)[0],
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
@@ -168,7 +168,7 @@ impl<'a> Renderer<'a> {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
+                    Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
@@ -182,14 +182,14 @@ impl<'a> Renderer<'a> {
                             ),
                             store: true,
                         }
-                    }
+                    })
                 ],
                 depth_stencil_attachment: None,
             });
 
             render_pass.execute_bundles(render_bundles.iter());
         }
-        
+
         self.queue.submit(Some(encoder.finish()));
         output.present();
     }
@@ -206,7 +206,7 @@ impl<'a> Renderer<'a> {
             let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
+                    Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
@@ -220,7 +220,7 @@ impl<'a> Renderer<'a> {
                             ),
                             store: true,
                         }
-                    }
+                    })
                 ],
                 depth_stencil_attachment: None,
             });
@@ -230,7 +230,7 @@ impl<'a> Renderer<'a> {
         font.render(&self.device, &mut encoder, &view, size);
         self.queue.submit(Some(encoder.finish()));
         output.present();
-        async_std::task::block_on(font.staging_belt.recall());
+        font.staging_belt.recall();
     }
 
     pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {

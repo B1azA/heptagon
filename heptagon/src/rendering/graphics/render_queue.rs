@@ -6,7 +6,7 @@ impl<'a> RenderQueue<'a> {
     pub fn begin(device: &'a wgpu::Device) -> Self {
         let encoder = device.create_render_bundle_encoder(&wgpu::RenderBundleEncoderDescriptor {
             label: Some("Render Queue Encoder"),
-            color_formats: &[wgpu::TextureFormat::Bgra8UnormSrgb],
+            color_formats: &[Some(wgpu::TextureFormat::Bgra8UnormSrgb)],
             depth_stencil: None,
             sample_count: 1,
             multiview: None,

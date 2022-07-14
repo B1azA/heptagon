@@ -66,7 +66,7 @@ impl Font {
             let _ = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
+                    Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
                         ops: wgpu::Operations {
@@ -80,7 +80,7 @@ impl Font {
                             ),
                             store: true,
                         }
-                    }
+                    })
                 ],
                 depth_stencil_attachment: None,
             });

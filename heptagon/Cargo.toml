@@ -10,12 +10,12 @@ async-std = "1.11.0"
 bytemuck = { version = "1.9.1", features = [ "derive" ] }
 env_logger = "0.9.0"
 log = "0.4.16"
-wgpu = "0.12.0"
+wgpu = "0.13.1"
 winit = "0.26.1"
 anyhow = "1.0.57"
 winit_input_helper = "0.12.0"
 glam = "0.20.5"
-wgpu_glyph = "0.16.0"
+wgpu_glyph = "0.17.0"
 game-loop = { version = "0.9.1", features = ["window"] }
 
 [dependencies.image]
