@@ -17,8 +17,11 @@ impl Font {
         Self::from_bytes(bytes)
     }
 
-    pub fn create_texture(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> Texture {
-        let (metrics, bitmap) = self.font.rasterize('g', 1000.0);
+    pub fn create_texture(&self, device: &wgpu::Device,
+        queue: &wgpu::Queue, character: char,
+        size: f32
+    ) -> Texture {
+        let (metrics, bitmap) = self.font.rasterize(character, size);
 
         let bytes: Vec<u8> = bitmap;
         let dimensions = (metrics.width as u32, metrics.height as u32);

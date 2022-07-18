@@ -25,7 +25,7 @@ impl Game {
         
         let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
 
-        let texture = font.create_texture(renderer.device(), renderer.queue());
+        let texture = font.create_texture(renderer.device(), renderer.queue(), 'A', 1000.0);
 
         Self {
             renderer,
@@ -134,15 +134,7 @@ impl Loop for Game {
             &self.renderer.text_pipeline,
         );
 
-        // render_queue.render_texture(
-        //     self.renderer.vertex_buffer.slice(..),
-        //     self.renderer.index_buffer.slice(..),
-        //     self.renderer.indices_count as u32,
-        //     &texture_bind_group,
-        //     &mvp_bind_group,
-        // );
-
-        let color_uniform = Uniform::new(glam::Vec4::new(1.0, 0.0, 0.0, 1.0));
+        let color_uniform = Uniform::new(glam::Vec4::new(1.0, 1.0, 1.0, 1.0));
         let color_bind_group = color_uniform.bind_group(&self.renderer.device());
 
         render_queue.render_text(
