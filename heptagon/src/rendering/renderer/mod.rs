@@ -1,4 +1,5 @@
-use crate::rendering::utils::*;
+use crate::rendering::*;
+use crate::rendering::render_pipeline::*;
 
 pub struct Renderer {
     surface: wgpu::Surface,
@@ -6,7 +7,8 @@ pub struct Renderer {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
-    pub render_pipeline: wgpu::RenderPipeline,
+    pub texture_pipeline: RenderPipeline,
+    pub text_pipeline: RenderPipeline,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub indices_count: usize,
@@ -68,55 +70,44 @@ impl Renderer {
 
         let index_buffer = indices.index_buffer(&device);
 
-        let texture_bind_group_layout = Texture::bind_group_layout(&device);
+        let texture_bind_group_layout = super::Texture::bind_group_layout(&device);
  
-        let mvp_bind_group_layout = Mat4Uniform::bind_group_layout(&device);
-        
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[
+        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(&device);
+
+        let texture_pipeline = super::render_pipeline::RenderPipeline::new(
+            &device,
+            include_str!("../../shaders/shader.wgsl"),
+            &[
                 &texture_bind_group_layout,
                 &mvp_bind_group_layout,
             ],
-            push_constant_ranges: &[],
-        });
+            &[vertices.buffer_layout()],
+            config.format,
+        );
 
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("Render Pipeline"),
-            layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[
-                    vertices.buffer_layout(),
-                ],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            multiview: None,
-        });
+        let color_bind_group_layout = super::Uniform::<glam::Vec4>::bind_group_layout(&device);
+
+        let text_pipeline = RenderPipeline::new(
+            &device,
+            include_str!("../../shaders/text.wgsl"),
+            &[
+                &texture_bind_group_layout,
+                &mvp_bind_group_layout,
+                &color_bind_group_layout,
+            ],
+            &[vertices.buffer_layout(), wgpu::VertexBufferLayout {
+                array_stride: std::mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
+                step_mode: wgpu::VertexStepMode::Vertex,
+                attributes: &[
+                    wgpu::VertexAttribute {
+                        offset: 0,
+                        shader_location: 0,
+                        format: wgpu::VertexFormat::Float32x4,
+                    },
+                ]
+            }],
+            config.format,
+        );
 
         let size = (config.width, config.height).into();
 
@@ -126,7 +117,8 @@ impl Renderer {
             queue,
             config,
             size,
-            render_pipeline,
+            texture_pipeline,
+            text_pipeline,
             vertex_buffer,
             index_buffer,
             indices_count,
@@ -210,6 +202,10 @@ impl Renderer {
 
         self.queue.submit(Some(encoder.finish()));
         output.present();
+    }
+
+    pub fn preffered_format(&self) -> wgpu::TextureFormat {
+        self.config().format
     }
 
     pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {

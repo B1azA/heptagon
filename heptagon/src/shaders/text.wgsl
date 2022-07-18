@@ -31,7 +31,6 @@ var<uniform> color: vec4<f32>;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let red_channel = textureSample(t_diffuse, s_diffuse, in.tex_coords).r;
-    var col = vec4<f32>(color.r, color.g, color.b, color.a * red_channel);
+    var col = vec4<f32>(color.r, color.g, color.b, textureSample(t_diffuse, s_diffuse, in.tex_coords).r);
     return col;
 }

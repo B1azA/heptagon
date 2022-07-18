@@ -1,7 +1,5 @@
 use heptagon::main_loop::*;
-use heptagon::rendering::wgpu;
-use heptagon::rendering::utils::*;
-use heptagon::rendering::graphics::render_queue::RenderQueue;
+use heptagon::rendering::*;
 
 pub struct Game {
     renderer: Renderer,
@@ -45,7 +43,6 @@ impl Game {
 
 impl Loop for Game {
     fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input) {
-
         let move_speed = 4.0;
         let mouse_speed = 0.5;
 
@@ -119,32 +116,47 @@ impl Loop for Game {
     }
     
     fn render(&mut self, window: &mut Window) {
-        
         let scale = glam::Vec3::ONE;
         let translation = glam::Vec3::new(0.0, 0.0, 0.0);
         let rotation = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
         let model = Model::new(scale, translation, rotation);
 
-        let mvp_bind_group = Mat4Uniform::new(
+        let mvp_uniform = Uniform::new(
             self.projection.projection_mat() * 
-            self.camera.view_mat() * model.model_mat()).bind_group(&self.renderer.device());
+            self.camera.view_mat() * model.model_mat());
+        let mvp_bind_group = mvp_uniform.bind_group(&self.renderer.device());
+
         let texture_bind_group = self.texture.bind_group(&self.renderer.device());
 
-        let mut render_queue = RenderQueue::begin(&self.renderer.device());
+        let mut render_queue = RenderQueue::begin(
+            &self.renderer.device(),
+            &self.renderer.texture_pipeline,
+            &self.renderer.text_pipeline,
+        );
 
-        render_queue = render_queue.render_texture(
-            &self.renderer.render_pipeline,
+        // render_queue.render_texture(
+        //     self.renderer.vertex_buffer.slice(..),
+        //     self.renderer.index_buffer.slice(..),
+        //     self.renderer.indices_count as u32,
+        //     &texture_bind_group,
+        //     &mvp_bind_group,
+        // );
+
+        let color_uniform = Uniform::new(glam::Vec4::new(1.0, 0.0, 0.0, 1.0));
+        let color_bind_group = color_uniform.bind_group(&self.renderer.device());
+
+        render_queue.render_text(
             self.renderer.vertex_buffer.slice(..),
             self.renderer.index_buffer.slice(..),
             self.renderer.indices_count as u32,
             &texture_bind_group,
             &mvp_bind_group,
+            &color_bind_group,
         );
 
         let texture_bind_group2 = self.texture2.bind_group(&self.renderer.device());
 
-        render_queue = render_queue.render_texture(
-            &self.renderer.render_pipeline,
+        render_queue.render_texture(
             self.renderer.vertex_buffer.slice(..),
             self.renderer.index_buffer.slice(..),
             self.renderer.indices_count as u32,
@@ -155,7 +167,5 @@ impl Loop for Game {
         let bundle = render_queue.finish();
 
         self.renderer.run_render_bundles(&[bundle]);
-
-        // self.renderer.render_text(&mut self.font, window.inner_size().try_into().unwrap());
     }
 }

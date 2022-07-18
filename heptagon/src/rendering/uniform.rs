@@ -39,7 +39,7 @@ impl<T> Uniform<T> {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStages::VERTEX,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
@@ -71,35 +71,5 @@ impl<T> Uniform<T> {
             let bytes = (self as *const Self) as *const u8;
             return std::slice::from_raw_parts(bytes, std::mem::size_of::<Self>());
         }
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct Mat4Uniform {
-    matrix: glam::Mat4,
-}
-
-impl Mat4Uniform {
-    pub fn new(mat: glam::Mat4) -> Self {
-        Self {
-            matrix: mat,
-        }
-    }
-
-    pub fn to_bytes<'a>(&self) -> &'a [u8] {
-        unsafe {
-            let bytes = (self as *const Self) as *const u8;
-            return std::slice::from_raw_parts(bytes, std::mem::size_of::<Self>());
-        }
-    }
-
-    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
-        let uniform = Uniform::new(*self);
-        uniform.bind_group(device)
-    }
-
-    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        Uniform::<Self>::bind_group_layout(device)
     }
 }
