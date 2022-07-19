@@ -4,7 +4,7 @@ use crate::rendering::render_pipeline::*;
 pub struct Renderer {
     surface: wgpu::Surface,
     device: wgpu::Device,
-    queue: wgpu::Queue,
+    pub queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     pub texture_pipeline: RenderPipeline,
@@ -194,6 +194,16 @@ impl Renderer {
 
         self.queue.submit(Some(encoder.finish()));
         output.present();
+    }
+
+    pub fn surface_texture(&self) -> wgpu::SurfaceTexture {
+        self.surface.get_current_texture().unwrap()
+    }
+
+    pub fn encoder(&self) -> wgpu::CommandEncoder {
+        self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Render Encoder"),
+        })
     }
 
     pub fn preffered_format(&self) -> wgpu::TextureFormat {

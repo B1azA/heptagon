@@ -4,7 +4,11 @@ pub mod wgpu;
 pub mod render_queue;
 pub use render_queue::*;
 
+pub mod render_pass;
+pub use render_pass::*;
+
 pub mod render_pipeline;
+pub use render_pipeline::*;
 
 pub mod vertices;
 pub use vertices::*;

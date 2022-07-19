@@ -60,7 +60,7 @@ impl RenderPipeline {
         }
     }
 
-    pub fn render_pipeline(& self) -> & wgpu::RenderPipeline {
+    pub fn render_pipeline(&self) -> &wgpu::RenderPipeline {
         &self.render_pipeline
     }
 }
