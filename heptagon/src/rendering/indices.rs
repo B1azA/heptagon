@@ -37,4 +37,8 @@ impl<'a, T> Indices<'a, T> {
     pub fn indices(&self) -> &'a [T] {
         &self.indices
     }
+
+    pub fn set_indices(&mut self, indices: &'a [T]) {
+        self.indices = indices;
+    }
 }

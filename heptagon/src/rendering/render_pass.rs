@@ -12,6 +12,7 @@ impl<'a> RenderPass<'a> {
         view: &'a wgpu::TextureView,
         texture_pipeline: &'a RenderPipeline,
         text_pipeline: &'a RenderPipeline,
+        background_color: [f64; 4],
     ) -> Self {
 
         let render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -23,10 +24,10 @@ impl<'a> RenderPass<'a> {
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(
                             wgpu::Color {
-                                r: 0.1,
-                                g: 0.2,
-                                b: 0.3,
-                                a: 0.0,
+                                r: background_color[0],
+                                g: background_color[1],
+                                b: background_color[2],
+                                a: background_color[3],
                             }
                         ),
                         store: true,

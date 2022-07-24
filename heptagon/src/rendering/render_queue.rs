@@ -1,12 +1,12 @@
 use super::render_pipeline::RenderPipeline;
 
-pub struct RenderQueue<'a> {
+pub struct RenderBundle<'a> {
     encoder: wgpu::RenderBundleEncoder<'a>,
     texture_pipeline: &'a RenderPipeline,
     text_pipeline: &'a RenderPipeline,
 }
 
-impl<'a> RenderQueue<'a> {
+impl<'a> RenderBundle<'a> {
     pub fn begin(
         device: &'a wgpu::Device,
         texture_pipeline: &'a RenderPipeline,

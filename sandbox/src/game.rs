@@ -2,7 +2,10 @@ use heptagon::main_loop::*;
 use heptagon::rendering::*;
 
 pub struct Game {
-    renderer: Renderer,
+    bundle: Bundle,
+    texture_pipeline: RenderPipeline,
+    text_pipeline: RenderPipeline,
+    mesh: MeshBuffer,
     texture: Texture,
     texture2: Texture,
     camera: Camera,
@@ -11,25 +14,48 @@ pub struct Game {
     yaw: f32,
     pitch: f32,
     font: Font,
-    bundles: Vec<wgpu::RenderBundle>,
 }
 
 impl Game {
-    pub fn new(window: &Window, renderer: Renderer) -> Self {
-        let texture2 = Texture::from_path(renderer.device(), renderer.queue(),
+    pub fn new(window: &Window, bundle: Bundle) -> Self {
+        let texture_pipeline = bundle.texture_pipeline();
+        let text_pipeline = bundle.text_pipeline();
+
+        let vertices = Vertices::new(
+            &[
+                VertexTex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], }, // A
+                VertexTex { position: [-0.5, -0.5, 0.0], tex_coords: [0.0, 1.0], }, // B
+                VertexTex { position: [0.5, -0.5, 0.0], tex_coords: [1.0, 1.0], }, // C
+                VertexTex { position: [0.5, 0.5, 0.0], tex_coords: [1.0, 0.0], }, // D
+            ]
+        );
+
+        let indices = Indices::<u16>::new(
+            &[
+                0, 1, 2,
+                2, 3, 0,
+            ]
+        );
+
+        let mesh = Mesh::new(vertices, indices).mesh_buffer(&bundle.device());
+
+        let texture2 = Texture::from_path(bundle.device(), bundle.queue(),
             "assets/images/rust.png", "happy-tree.png").unwrap();
 
         let camera = Camera::new(glam::Vec3::new(0.0, 0.0, 2.0), glam::Vec3::new(0.0, 0.0, 1.0));
 
-        let projection = Projection::new(renderer.config().width, renderer.config().height,
+        let projection = Projection::new(bundle.config().width, bundle.config().height,
             0.785398163, 0.1, 100.0);
         
         let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
 
-        let texture = font.create_texture(renderer.device(), renderer.queue(), 'A', 1000.0);
+        let texture = font.glyph_texture(bundle.device(), bundle.queue(), 'A', 100.0);
 
         Self {
-            renderer,
+            bundle,
+            texture_pipeline,
+            text_pipeline,
+            mesh,
             texture,
             texture2,
             camera,
@@ -38,7 +64,6 @@ impl Game {
             yaw: -3.141592 / 2.0,
             pitch: 0.0,
             font,
-            bundles: vec![],
         }
     }
 }
@@ -53,7 +78,7 @@ impl Loop for Game {
             println!("Delta: {}", delta);
         }
         if let Some(size) = input.window_resized() {
-            self.renderer.resize(size);
+            self.bundle.resize(size);
             self.projection.resize(size.width, size.height)
         }
 
@@ -126,46 +151,47 @@ impl Loop for Game {
         let mvp_uniform = Uniform::new(
             self.projection.projection_mat() * 
             self.camera.view_mat() * model.model_mat());
-        let mvp_bind_group = mvp_uniform.bind_group(&self.renderer.device());
+        let mvp_bind_group = mvp_uniform.bind_group(&self.bundle.device());
 
-        let texture_bind_group = self.texture.bind_group(&self.renderer.device());
+        let texture_bind_group = self.texture.bind_group(&self.bundle.device());
 
-        let output = self.renderer.surface_texture();
-        let mut encoder = self.renderer.encoder();
+        let output = self.bundle.surface_texture();
+        let mut encoder = self.bundle.encoder();
         let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let color_uniform = Uniform::new(glam::Vec4::new(1.0, 1.0, 1.0, 1.0));
-        let color_bind_group = color_uniform.bind_group(&self.renderer.device());
+        let color_bind_group = color_uniform.bind_group(&self.bundle.device());
 
-        let texture_bind_group2 = self.texture2.bind_group(&self.renderer.device());
+        let texture_bind_group2 = self.texture2.bind_group(&self.bundle.device());
 
         let mut render_pass = RenderPass::begin(
             &mut encoder,
             &view,
-            &self.renderer.texture_pipeline,
-            &self.renderer.text_pipeline,
+            &self.texture_pipeline,
+            &self.text_pipeline,
+            [0.1, 0.2, 0.3, 0.0]
         );
 
         render_pass.render_text(
-            self.renderer.vertex_buffer.slice(..),
-            self.renderer.index_buffer.slice(..),
-            self.renderer.indices_count as u32,
+            self.mesh.vertex_buffer_slice(),
+            self.mesh.index_buffer_slice(),
+            self.mesh.index_count(),
             &texture_bind_group,
             &mvp_bind_group,
             &color_bind_group,
         );
 
         render_pass.render_texture(
-            self.renderer.vertex_buffer.slice(..),
-            self.renderer.index_buffer.slice(..),
-            self.renderer.indices_count as u32,
+            self.mesh.vertex_buffer_slice(),
+            self.mesh.index_buffer_slice(),
+            self.mesh.index_count(),
             &texture_bind_group2,
             &mvp_bind_group,
         );
 
         render_pass.end();
 
-        self.renderer.queue.submit(Some(encoder.finish()));
+        self.bundle.queue().submit(Some(encoder.finish()));
         output.present();
     }
 }

@@ -6,7 +6,7 @@ impl RenderPipeline {
     pub fn new(device: &wgpu::Device, shader: &str,
         bind_group_layouts: &[&wgpu::BindGroupLayout],
         vertex_buffer_layouts: &[wgpu::VertexBufferLayout],
-        format: wgpu::TextureFormat,
+        format: wgpu::TextureFormat
         ) -> Self {
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {

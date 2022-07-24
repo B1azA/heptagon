@@ -17,7 +17,7 @@ impl Font {
         Self::from_bytes(bytes)
     }
 
-    pub fn create_texture(&self, device: &wgpu::Device,
+    pub fn glyph_texture(&self, device: &wgpu::Device,
         queue: &wgpu::Queue, character: char,
         size: f32
     ) -> Texture {

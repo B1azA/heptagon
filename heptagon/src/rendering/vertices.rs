@@ -15,7 +15,7 @@ impl VertexColor {
         }
     }
 
-    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<VertexColor>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
@@ -50,7 +50,7 @@ impl VertexTex {
         }
     }
 
-    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
         wgpu::VertexBufferLayout {
             array_stride: mem::size_of::<VertexTex>() as wgpu::BufferAddress,
@@ -84,7 +84,7 @@ impl Vertex {
         }
     }
 
-    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
         wgpu::VertexBufferLayout {
             array_stride: mem::size_of::<Vertex>() as wgpu::BufferAddress,
@@ -142,7 +142,7 @@ impl<'a, T: VertexBufferLayout> Vertices<'a, T> {
         vertex_buffer
     }
 
-    pub fn buffer_layout(&self) -> wgpu::VertexBufferLayout {
+    pub fn vertex_buffer_layout() -> wgpu::VertexBufferLayout<'a> {
         T::buffer_layout()
     }
 }
@@ -153,18 +153,18 @@ pub trait VertexBufferLayout {
 
 impl VertexBufferLayout for VertexTex {
     fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        VertexTex::desc()
+        VertexTex::buffer_layout()
     }
 }
 
 impl VertexBufferLayout for Vertex {
     fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        Vertex::desc()
+        Vertex::buffer_layout()
     }
 }
 
 impl VertexBufferLayout for VertexColor {
     fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        VertexColor::desc()
+        VertexColor::buffer_layout()
     }
 }

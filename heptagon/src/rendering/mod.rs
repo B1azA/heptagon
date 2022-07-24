@@ -1,5 +1,6 @@
-pub mod renderer;
 pub mod wgpu;
+
+pub mod bundle;
 
 pub mod render_queue;
 pub use render_queue::*;

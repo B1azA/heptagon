@@ -16,7 +16,7 @@ pub mod input;
 pub use input::*;
 pub use winit;
 pub use winit::window::Window;
-pub use crate::rendering::renderer::*;
+pub use crate::rendering::bundle::*;
 pub use glam;
 
 pub struct MainLoop {
