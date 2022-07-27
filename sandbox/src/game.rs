@@ -21,35 +21,53 @@ impl Game {
         let texture_pipeline = bundle.texture_pipeline();
         let text_pipeline = bundle.text_pipeline();
 
-        let vertices = Vertices::new(
-            &[
-                VertexTex { position: [-0.5, 0.5, 0.0], tex_coords: [0.0, 0.0], }, // A
-                VertexTex { position: [-0.5, -0.5, 0.0], tex_coords: [0.0, 1.0], }, // B
-                VertexTex { position: [0.5, -0.5, 0.0], tex_coords: [1.0, 1.0], }, // C
-                VertexTex { position: [0.5, 0.5, 0.0], tex_coords: [1.0, 0.0], }, // D
-            ]
-        );
+        let vertices = Vertices::new(&[
+            VertexTex {
+                position: [-0.5, 0.5, 0.0],
+                tex_coords: [0.0, 0.0],
+            }, // A
+            VertexTex {
+                position: [-0.5, -0.5, 0.0],
+                tex_coords: [0.0, 1.0],
+            }, // B
+            VertexTex {
+                position: [0.5, -0.5, 0.0],
+                tex_coords: [1.0, 1.0],
+            }, // C
+            VertexTex {
+                position: [0.5, 0.5, 0.0],
+                tex_coords: [1.0, 0.0],
+            }, // D
+        ]);
 
-        let indices = Indices::<u16>::new(
-            &[
-                0, 1, 2,
-                2, 3, 0,
-            ]
-        );
+        let indices = Indices::<u16>::new(&[0, 1, 2, 2, 3, 0]);
 
         let mesh = Mesh::new(vertices, indices).mesh_buffer(&bundle.device());
 
-        let texture2 = Texture::from_path(bundle.device(), bundle.queue(),
-            "assets/images/rust.png", "happy-tree.png").unwrap();
+        let texture2 = Texture::from_path(
+            bundle.device(),
+            bundle.queue(),
+            "assets/images/rust.png",
+            "happy-tree.png",
+        )
+        .unwrap();
 
-        let camera = Camera::new(glam::Vec3::new(0.0, 0.0, 2.0), glam::Vec3::new(0.0, 0.0, 1.0));
+        let camera = Camera::new(
+            glam::Vec3::new(0.0, 0.0, 2.0),
+            glam::Vec3::new(0.0, 0.0, 1.0),
+        );
 
-        let projection = Projection::new(bundle.config().width, bundle.config().height,
-            0.785398163, 0.1, 100.0);
-        
+        let projection = Projection::new(
+            bundle.config().width,
+            bundle.config().height,
+            0.785398163,
+            0.1,
+            100.0,
+        );
+
         let font = Font::from_path("assets/fonts/Roboto-Regular.ttf");
 
-        let texture = font.glyph_texture(bundle.device(), bundle.queue(), 'A', 100.0);
+        let texture = font.glyph_texture(bundle.device(), bundle.queue(), 'a', 100.0);
 
         Self {
             bundle,
@@ -99,13 +117,12 @@ impl Loop for Game {
             self.camera.set_position(self.camera.position() + shift);
         }
 
-        
         // ------- MOUSE -------
         let offset = input.mouse_delta();
-        
+
         self.yaw += offset.0 * delta * mouse_speed;
         self.pitch -= offset.1 * delta * mouse_speed;
-        
+
         let yaw: f32 = self.yaw;
         let pitch: f32 = self.pitch;
         self.camera.set_angles(yaw, pitch);
@@ -117,31 +134,32 @@ impl Loop for Game {
         if input.key_pressed(Key::L) {
             self.cursor_locked = !self.cursor_locked;
             input.mouse_lock(self.cursor_locked);
-            
+
             if self.cursor_locked {
                 println!("Cursor: locked");
             } else {
                 println!("Cursor: unlocked");
             }
         }
-        
+
         if input.key_pressed(Key::G) {
             window.set_cursor_grab(true).unwrap();
             println!("Cursor: grabbed");
         }
-        
+
         if input.key_pressed(Key::U) {
             window.set_cursor_grab(false).unwrap();
             println!("Cursor: ungrabbed");
         }
 
         if input.key_pressed(Key::C) {
-            self.camera.set_direction(self.camera.position() - glam::Vec3::new(0.0, 0.0, -1.0));
+            self.camera
+                .set_direction(self.camera.position() - glam::Vec3::new(0.0, 0.0, -1.0));
             self.yaw = self.camera.yaw();
             self.pitch = self.camera.pitch();
         }
     }
-    
+
     fn render(&mut self, window: &mut Window) {
         let scale = glam::Vec3::ONE;
         let translation = glam::Vec3::new(0.0, 0.0, 0.0);
@@ -149,15 +167,17 @@ impl Loop for Game {
         let model = Model::new(scale, translation, rotation);
 
         let mvp_uniform = Uniform::new(
-            self.projection.projection_mat() * 
-            self.camera.view_mat() * model.model_mat());
+            self.projection.projection_mat() * self.camera.view_mat() * model.model_mat(),
+        );
         let mvp_bind_group = mvp_uniform.bind_group(&self.bundle.device());
 
         let texture_bind_group = self.texture.bind_group(&self.bundle.device());
 
         let output = self.bundle.surface_texture();
         let mut encoder = self.bundle.encoder();
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         let color_uniform = Uniform::new(glam::Vec4::new(1.0, 1.0, 1.0, 1.0));
         let color_bind_group = color_uniform.bind_group(&self.bundle.device());
@@ -169,7 +189,7 @@ impl Loop for Game {
             &view,
             &self.texture_pipeline,
             &self.text_pipeline,
-            [0.1, 0.2, 0.3, 0.0]
+            [0.1, 0.2, 0.3, 0.0],
         );
 
         render_pass.render_text(
@@ -195,3 +215,4 @@ impl Loop for Game {
         output.present();
     }
 }
+

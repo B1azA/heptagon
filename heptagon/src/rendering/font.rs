@@ -30,3 +30,36 @@ impl Font {
         texture
     }
 }
+
+pub struct Atlas<K: Eq, V> {
+    keys: Vec<K>,
+    vals: Vec<V>,
+}
+
+impl<K: Eq, V> Atlas<K, V> {
+    pub fn new() -> Self {
+        Self {
+            keys: vec![],
+            vals: vec![],
+        }
+    }
+
+    pub fn contains(&self, key: &K) -> bool {
+        self.keys.contains(key)
+    }
+
+    pub fn index(&self, key: &K) -> usize {
+        self.keys.iter().position(|x| x == key).unwrap()
+    }
+
+    pub fn value(&self, index: usize) -> &V {
+        &self.vals[index]
+    }
+
+    pub fn add(&mut self, key: K, value: V) -> usize {
+        self.keys.push(key);
+        self.vals.push(value);
+
+        self.vals.len() - 1
+    }
+}
