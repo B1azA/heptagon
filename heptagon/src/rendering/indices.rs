@@ -1,12 +1,12 @@
 use wgpu::util::DeviceExt;
 
-#[derive(Debug, Copy, Clone)]
-pub struct Indices<'a, T> {
-    indices: &'a [T],
+#[derive(Debug)]
+pub struct Indices<I> {
+    indices: Vec<I>,
 }
 
-impl<'a, T> Indices<'a, T> {
-    pub fn new(indices: &'a [T]) -> Self {
+impl<I> Indices<I> {
+    pub fn new(indices: Vec<I>) -> Self {
         Self {
             indices,
         }
@@ -16,10 +16,10 @@ impl<'a, T> Indices<'a, T> {
         self.indices.len()
     }
 
-    pub fn to_bytes(&self) -> &'a [u8] {
+    pub fn to_bytes(&self) -> &[u8] {
         unsafe {
-            let bytes = (self.indices as *const [T]) as *const u8;
-            return std::slice::from_raw_parts(bytes, self.indices.len() * std::mem::size_of::<T>());
+            let bytes = (self.indices.as_ref() as *const [I]) as *const u8;
+            return std::slice::from_raw_parts(bytes, self.indices.len() * std::mem::size_of::<I>());
         }
     }
 
@@ -34,11 +34,15 @@ impl<'a, T> Indices<'a, T> {
         index_buffer
     }
 
-    pub fn indices(&self) -> &'a [T] {
+    pub fn indices(&self) -> &Vec<I> {
         &self.indices
     }
 
-    pub fn set_indices(&mut self, indices: &'a [T]) {
+    pub fn indices_mut(&mut self) -> &mut Vec<I> {
+        &mut self.indices
+    }
+
+    pub fn set_indices(&mut self, indices: Vec<I>) {
         self.indices = indices;
     }
 }

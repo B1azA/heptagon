@@ -37,3 +37,8 @@ pub use font::*;
 
 pub mod uniform;
 pub use uniform::*;
+
+pub mod instance;
+pub use instance::*;
+
+pub mod utils;

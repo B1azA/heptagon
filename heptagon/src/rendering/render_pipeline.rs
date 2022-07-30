@@ -3,22 +3,25 @@ pub struct RenderPipeline {
 }
 
 impl RenderPipeline {
-    pub fn new(device: &wgpu::Device, shader: &str,
+    pub fn new(
+        device: &wgpu::Device,
+        shader: &str,
         bind_group_layouts: &[&wgpu::BindGroupLayout],
         vertex_buffer_layouts: &[wgpu::VertexBufferLayout],
-        format: wgpu::TextureFormat
-        ) -> Self {
-
+        format: wgpu::TextureFormat,
+        alpha_blending: bool,
+    ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(shader.into()),
         });
 
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Render Pipeline Layout"),
-            bind_group_layouts: bind_group_layouts,
-            push_constant_ranges: &[],
-        });
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: bind_group_layouts,
+                push_constant_ranges: &[],
+            });
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
@@ -26,14 +29,20 @@ impl RenderPipeline {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: vertex_buffer_layouts
+                buffers: vertex_buffer_layouts,
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    blend: {
+                        if alpha_blending {
+                            Some(wgpu::BlendState::ALPHA_BLENDING)
+                        } else {
+                            None
+                        }
+                    },
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -55,9 +64,7 @@ impl RenderPipeline {
             multiview: None,
         });
 
-        Self {
-            render_pipeline
-        }
+        Self { render_pipeline }
     }
 
     pub fn render_pipeline(&self) -> &wgpu::RenderPipeline {

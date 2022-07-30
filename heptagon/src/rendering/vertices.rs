@@ -1,14 +1,13 @@
 use wgpu::util::DeviceExt;
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct VertexColor {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
+    pub position: glam::Vec3,
+    pub color: glam::Vec3,
 }
 
 impl VertexColor {
-    pub fn new(position: [f32; 3], color: [f32; 3]) -> Self {
+    pub fn new(position: glam::Vec3, color: glam::Vec3) -> Self {
         Self {
             position,
             color,
@@ -36,14 +35,13 @@ impl VertexColor {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct VertexTex {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
+    pub position: glam::Vec3,
+    pub tex_coords: glam::Vec2,
 }
 
 impl VertexTex {
-    pub fn new(position: [f32; 3], tex_coords: [f32; 2]) -> Self {
+    pub fn new(position: glam::Vec3, tex_coords: glam::Vec2) -> Self {
         Self {
             position,
             tex_coords,
@@ -74,11 +72,11 @@ impl VertexTex {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
-    pub position: [f32; 3]
+    pub position: glam::Vec3,
 }
 
 impl Vertex {
-    pub fn new(position: [f32; 3]) -> Self {
+    pub fn new(position: glam::Vec3) -> Self {
         Self {
             position,
         }
@@ -100,23 +98,27 @@ impl Vertex {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct Vertices<'a, T: VertexBufferLayout> {
-    vertices: &'a [T],
+#[derive(Debug)]
+pub struct Vertices<V: VertexBufferLayout> {
+    vertices: Vec<V>,
 }
 
-impl<'a, T: VertexBufferLayout> Vertices<'a, T> {
-    pub fn new(vertices: &'a [T]) -> Self {
+impl<V: VertexBufferLayout> Vertices<V> {
+    pub fn new(vertices: Vec<V>) -> Self {
         Self {
             vertices,
         }
     }
 
-    pub fn vertices(&self) -> &'a [T] {
+    pub fn vertices(&self) -> &Vec<V> {
         &self.vertices
     }
 
-    pub fn set_vertices(&mut self, vertices: &'a [T]) {
+    pub fn vertices_mut(&mut self) -> &mut Vec<V> {
+        &mut self.vertices
+    }
+
+    pub fn set_vertices(&mut self, vertices: Vec<V>) {
         self.vertices = vertices;
     }
 
@@ -124,10 +126,10 @@ impl<'a, T: VertexBufferLayout> Vertices<'a, T> {
         self.vertices.len()
     }
 
-    pub fn to_bytes(&self) -> &'a [u8] {
+    pub fn to_bytes(&self) -> &[u8] {
         unsafe {
-            let bytes = (self.vertices as *const [T]) as *const u8;
-            return std::slice::from_raw_parts(bytes, self.vertices.len() * std::mem::size_of::<T>());
+            let bytes = (self.vertices.as_ref() as *const [V]) as *const u8;
+            return std::slice::from_raw_parts(bytes, self.vertices.len() * std::mem::size_of::<V>());
         }
     }
 
@@ -142,29 +144,29 @@ impl<'a, T: VertexBufferLayout> Vertices<'a, T> {
         vertex_buffer
     }
 
-    pub fn vertex_buffer_layout() -> wgpu::VertexBufferLayout<'a> {
-        T::buffer_layout()
+    pub fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+        V::vertex_buffer_layout()
     }
 }
 
 pub trait VertexBufferLayout {
-    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
 }
 
 impl VertexBufferLayout for VertexTex {
-    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         VertexTex::buffer_layout()
     }
 }
 
 impl VertexBufferLayout for Vertex {
-    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         Vertex::buffer_layout()
     }
 }
 
 impl VertexBufferLayout for VertexColor {
-    fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         VertexColor::buffer_layout()
     }
 }

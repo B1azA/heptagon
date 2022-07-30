@@ -1,10 +1,14 @@
 use heptagon::main_loop::*;
 use heptagon::rendering::*;
+use wgpu::util::DeviceExt;
+
+const NUM_INSTANCES_PER_ROW: u32 = 10;
 
 pub struct Game {
     bundle: Bundle,
     texture_pipeline: RenderPipeline,
     text_pipeline: RenderPipeline,
+    texture_pipeline_instanced: RenderPipeline,
     mesh: MeshBuffer,
     texture: Texture,
     texture2: Texture,
@@ -14,40 +18,44 @@ pub struct Game {
     yaw: f32,
     pitch: f32,
     font: Font,
+    instances: Instances<Instance>,
+    #[allow(dead_code)]
+    instance_buffer: wgpu::Buffer,
 }
 
 impl Game {
     pub fn new(window: &Window, bundle: Bundle) -> Self {
         let texture_pipeline = bundle.texture_pipeline();
         let text_pipeline = bundle.text_pipeline();
+        let texture_pipeline_instanced = bundle.texture_pipeline_instanced();
 
-        let vertices = Vertices::new(&[
+        let vertices = Vertices::new(vec![
             VertexTex {
-                position: [-0.5, 0.5, 0.0],
-                tex_coords: [0.0, 0.0],
+                position: glam::vec3(-0.5, 0.5, 0.0),
+                tex_coords: glam::vec2(0.0, 0.0),
             }, // A
             VertexTex {
-                position: [-0.5, -0.5, 0.0],
-                tex_coords: [0.0, 1.0],
+                position: glam::vec3(-0.5, -0.5, 0.0),
+                tex_coords: glam::vec2(0.0, 1.0),
             }, // B
             VertexTex {
-                position: [0.5, -0.5, 0.0],
-                tex_coords: [1.0, 1.0],
+                position: glam::vec3(0.5, -0.5, 0.0),
+                tex_coords: glam::vec2(1.0, 1.0),
             }, // C
             VertexTex {
-                position: [0.5, 0.5, 0.0],
-                tex_coords: [1.0, 0.0],
+                position: glam::vec3(0.5, 0.5, 0.0),
+                tex_coords: glam::vec2(1.0, 0.0),
             }, // D
         ]);
 
-        let indices = Indices::<u16>::new(&[0, 1, 2, 2, 3, 0]);
+        let indices = Indices::<u16>::new(vec![0, 1, 2, 2, 3, 0]);
 
         let mesh = Mesh::new(vertices, indices).mesh_buffer(&bundle.device());
 
         let texture2 = Texture::from_path(
             bundle.device(),
             bundle.queue(),
-            "assets/images/rust.png",
+            "assets/images/happy-tree.png",
             "happy-tree.png",
         )
         .unwrap();
@@ -69,10 +77,47 @@ impl Game {
 
         let texture = font.glyph_texture(bundle.device(), bundle.queue(), 'a', 100.0);
 
+        let instance_displacement: glam::Vec3 = glam::vec3(
+            NUM_INSTANCES_PER_ROW as f32 * 0.5,
+            0.0,
+            NUM_INSTANCES_PER_ROW as f32 * 0.5,
+        );
+
+        let instances = (0..NUM_INSTANCES_PER_ROW)
+            .flat_map(|z| {
+                (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+                    let position = glam::vec3(x as f32, 0.0, z as f32) - instance_displacement;
+
+                    let rotation = if position == glam::Vec3::ZERO {
+                        // this is needed so an object at (0, 0, 0) won't get scaled to zero
+                        // as Quaternions can effect scale if they're not created correctly
+                        glam::Quat::from_axis_angle(
+                            glam::Vec3::Z,
+                            0.0,
+                        )
+                    } else {
+                        glam::Quat::from_axis_angle(position.normalize(), std::f32::consts::PI / 4.0)
+                    };
+
+                    Instance::new(Model::new(glam::Vec3::ONE, position, rotation).model_mat())
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let instances = Instances::new(instances);
+
+        let instance_buffer = bundle.device().create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            contents: instances.to_bytes(),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+
         Self {
             bundle,
             texture_pipeline,
             text_pipeline,
+            texture_pipeline_instanced,
             mesh,
             texture,
             texture2,
@@ -82,6 +127,8 @@ impl Game {
             yaw: -3.141592 / 2.0,
             pitch: 0.0,
             font,
+            instances,
+            instance_buffer,
         }
     }
 }
@@ -184,29 +231,43 @@ impl Loop for Game {
 
         let texture_bind_group2 = self.texture2.bind_group(&self.bundle.device());
 
+        let vp_uniform = Uniform::new(self.projection.projection_mat() * self.camera.view_mat());
+        let vp_bind_group = vp_uniform.bind_group(&self.bundle.device());
+
         let mut render_pass = RenderPass::begin(
             &mut encoder,
             &view,
             &self.texture_pipeline,
             &self.text_pipeline,
+            &self.texture_pipeline_instanced,
             [0.1, 0.2, 0.3, 0.0],
         );
 
-        render_pass.render_text(
-            self.mesh.vertex_buffer_slice(),
-            self.mesh.index_buffer_slice(),
-            self.mesh.index_count(),
-            &texture_bind_group,
-            &mvp_bind_group,
-            &color_bind_group,
-        );
+        // render_pass.render_text(
+        //     self.mesh.vertex_buffer_slice(),
+        //     self.mesh.index_buffer_slice(),
+        //     0..self.mesh.index_count(),
+        //     &texture_bind_group,
+        //     &mvp_bind_group,
+        //     &color_bind_group,
+        // );
 
-        render_pass.render_texture(
+        // render_pass.render_texture(
+        //     self.mesh.vertex_buffer_slice(),
+        //     self.mesh.index_buffer_slice(),
+        //     0..self.mesh.index_count(),
+        //     &texture_bind_group2,
+        //     &mvp_bind_group,
+        // );
+
+        render_pass.render_texture_instanced(
             self.mesh.vertex_buffer_slice(),
             self.mesh.index_buffer_slice(),
-            self.mesh.index_count(),
+            0..self.mesh.index_count(),
             &texture_bind_group2,
-            &mvp_bind_group,
+            &vp_bind_group,
+            self.instance_buffer.slice(..),
+            0..self.instances.len() as u32
         );
 
         render_pass.end();
@@ -215,4 +276,3 @@ impl Loop for Game {
         output.present();
     }
 }
-

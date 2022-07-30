@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Model {
     scale: glam::Vec3,
     translation: glam::Vec3,
@@ -40,5 +41,5 @@ impl Model {
     pub fn set_rotation(&mut self, rotation: glam::Quat) {
         self.rotation = rotation;
     }
-    
 }
+

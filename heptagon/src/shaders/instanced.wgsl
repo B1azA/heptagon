@@ -1,9 +1,16 @@
 @group(1) @binding(0)
-var<uniform> mvp: mat4x4<f32>;
+var<uniform> vp: mat4x4<f32>;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
+};
+
+struct InstanceInput {
+    @location(5) model_matrix_0: vec4<f32>,
+    @location(6) model_matrix_1: vec4<f32>,
+    @location(7) model_matrix_2: vec4<f32>,
+    @location(8) model_matrix_3: vec4<f32>,
 };
 
 struct VertexOutput {
@@ -12,10 +19,16 @@ struct VertexOutput {
 };
 
 @vertex
-fn vs_main(model: VertexInput,) -> VertexOutput {
+fn vs_main(model: VertexInput, instance: InstanceInput) -> VertexOutput {
+    let model_matrix = mat4x4<f32>(
+      instance.model_matrix_0,
+      instance.model_matrix_1,
+      instance.model_matrix_2,
+      instance.model_matrix_3,
+    );
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
-    out.clip_position = mvp * vec4<f32>(model.position, 1.0);
+    out.clip_position = vp * model_matrix * vec4<f32>(model.position, 1.0);
     return out;
 }
 

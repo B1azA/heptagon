@@ -1,19 +1,19 @@
 use super::*;
 
-pub struct Mesh<'a, V: VertexBufferLayout + 'a, I> {
-    vertices: Vertices<'a, V>,
-    indices: Indices<'a, I>,
+pub struct Mesh<V: VertexBufferLayout, I> {
+    vertices: Vertices<V>,
+    indices: Indices<I>,
 }
 
-impl<'a, V: VertexBufferLayout + 'a, I> Mesh<'a, V, I> {
-    pub fn new(vertices: Vertices<'a, V>, indices: Indices<'a, I>) -> Self {
+impl<V: VertexBufferLayout, I> Mesh<V, I> {
+    pub fn new(vertices: Vertices<V>, indices: Indices<I>) -> Self {
         Self {
             vertices,
             indices,
         }
     }
 
-    pub fn vertex_buffer_layout() -> wgpu::VertexBufferLayout<'a> {
+    pub fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         Vertices::<V>::vertex_buffer_layout()
     }
 
@@ -25,19 +25,27 @@ impl<'a, V: VertexBufferLayout + 'a, I> Mesh<'a, V, I> {
         self.indices.index_buffer(device)
     }
 
-    pub fn vertices(&self) -> &'a [V] {
-        &self.vertices.vertices()
+    pub fn vertices(&self) -> &Vec<V> {
+        self.vertices.vertices()
     }
 
-    pub fn set_vertices(&mut self, vertices: &'a [V]) {
+    pub fn vertices_mut(&mut self) -> &mut Vec<V> {
+        self.vertices.vertices_mut()
+    }
+
+    pub fn set_vertices(&mut self, vertices: Vec<V>) {
         self.vertices.set_vertices(vertices);
     }
 
-    pub fn indices(&self) -> &'a [I] {
-        &self.indices.indices()
+    pub fn indices(&self) -> &Vec<I> {
+        self.indices.indices()
     }
 
-    pub fn set_indices(&mut self, indices: &'a [I]) {
+    pub fn indices_mut(&mut self) -> &mut Vec<I> {
+        self.indices.indices_mut()
+    }
+
+    pub fn set_indices(&mut self, indices: Vec<I>) {
         self.indices.set_indices(indices);
     }
 
