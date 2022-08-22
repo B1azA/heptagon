@@ -65,11 +65,11 @@ impl Instance {
     }
 }
 
-pub struct Instances<I: super::VertexBufferLayout> {
+pub struct Instances<I: super::Vertex> {
     instances: Vec<I>,
 }
 
-impl<I: super::VertexBufferLayout> Instances<I> {
+impl<I: super::Vertex> Instances<I> {
     pub fn new(instances: Vec<I>) -> Self {
         Self {
             instances
@@ -104,7 +104,7 @@ impl<I: super::VertexBufferLayout> Instances<I> {
     }
 }
 
-impl super::VertexBufferLayout for Instance {
+impl super::Vertex for Instance {
     fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         Self::vertex_buffer_layout()
     }

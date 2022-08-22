@@ -29,19 +29,19 @@ impl Game {
         let texture_pipeline_instanced = bundle.texture_pipeline_instanced();
 
         let vertices = Vertices::new(vec![
-            VertexTex {
+            TextureVertex {
                 position: glam::vec3(-0.5, 0.5, 0.0),
                 tex_coords: glam::vec2(0.0, 0.0),
             }, // A
-            VertexTex {
+            TextureVertex {
                 position: glam::vec3(-0.5, -0.5, 0.0),
                 tex_coords: glam::vec2(0.0, 1.0),
             }, // B
-            VertexTex {
+            TextureVertex {
                 position: glam::vec3(0.5, -0.5, 0.0),
                 tex_coords: glam::vec2(1.0, 1.0),
             }, // C
-            VertexTex {
+            TextureVertex {
                 position: glam::vec3(0.5, 0.5, 0.0),
                 tex_coords: glam::vec2(1.0, 0.0),
             }, // D
@@ -116,7 +116,6 @@ impl Game {
         let depth_texture = Texture::depth_texture(bundle.device(), bundle.config(),
             Bundle::DEPTH_FORMAT, "depth_texture");
 
-
         Self {
             bundle,
             texture_pipeline,
@@ -140,8 +139,6 @@ impl Game {
 
 impl Loop for Game {
     fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input) {
-        let move_speed = 4.0;
-        let mouse_speed = 0.5;
 
         if input.key_held(Key::Space) {
             println!("UPS: {:.2}", 1.0 / delta);
@@ -154,36 +151,44 @@ impl Loop for Game {
             Bundle::DEPTH_FORMAT, "depth_texture");
         }
 
+        // -------- MOVEMENT --------
+
+        let move_speed = 5.5;
+        let mouse_speed = 0.5;
+
+        let mut forward = 0.0;
+        let mut right = 0.0;
+        let mut up = 0.0;
+
         if input.key_held(Key::W) {
-            let shift = self.camera.forward().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.position() + shift);
+            forward += 1.0;
         }
         if input.key_held(Key::S) {
-            let shift = self.camera.forward().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.position() - shift);
+            forward += -1.0;
         }
         if input.key_held(Key::A) {
-            let shift = self.camera.right().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.position() - shift);
+            right += -1.0;
         }
         if input.key_held(Key::D) {
-            let shift = self.camera.right().normalize() * delta * move_speed;
-            self.camera.set_position(self.camera.position() + shift);
+            right += 1.0;
+        }
+        if input.key_held(Key::Q) {
+            up += 1.0;
+        }
+        if input.key_held(Key::E) {
+            up += -1.0;
         }
 
-        // ------- MOUSE -------
         let offset = input.mouse_delta();
 
         self.yaw += offset.0 * delta * mouse_speed;
         self.pitch -= offset.1 * delta * mouse_speed;
 
-        let yaw: f32 = self.yaw;
-        let pitch: f32 = self.pitch;
-        self.camera.set_angles(yaw, pitch);
-        // let camera_yaw = self.camera.get_yaw();
-        // let camera_pitch = self.camera.get_pitch();
-        // println!("Yaw: {yaw}, Calculated yaw: {camera_yaw}");
-        // println!("Pitch: {pitch}, Calculated pitch: {camera_pitch}");
+        self.camera.set_angles_mut(&mut self.yaw, &mut self.pitch);
+        self.camera.shift(
+            forward * delta * move_speed, 
+            right * delta * move_speed, 
+            up * delta * move_speed);
 
         if input.key_pressed(Key::L) {
             self.cursor_locked = !self.cursor_locked;
@@ -207,10 +212,11 @@ impl Loop for Game {
         }
 
         if input.key_pressed(Key::C) {
-            self.camera
-                .set_direction(self.camera.position() - glam::Vec3::new(0.0, 0.0, -1.0));
+            self.camera.set_target(glam::vec3(0.0, 0.0, 0.0));
+
             self.yaw = self.camera.yaw();
             self.pitch = self.camera.pitch();
+            println!("{}, {}", self.yaw, self.pitch);
         }
     }
 

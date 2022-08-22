@@ -1,11 +1,11 @@
 use super::*;
 
-pub struct Mesh<V: VertexBufferLayout, I> {
+pub struct Mesh<V: Vertex, I> {
     vertices: Vertices<V>,
     indices: Indices<I>,
 }
 
-impl<V: VertexBufferLayout, I> Mesh<V, I> {
+impl<V: Vertex, I> Mesh<V, I> {
     pub fn new(vertices: Vertices<V>, indices: Indices<I>) -> Self {
         Self {
             vertices,

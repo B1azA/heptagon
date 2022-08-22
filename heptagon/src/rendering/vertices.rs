@@ -1,22 +1,25 @@
 use wgpu::util::DeviceExt;
 
 #[repr(C)]
-pub struct VertexColor {
+#[derive(Copy, Clone, Debug)]
+pub struct ColorVertex {
     pub position: glam::Vec3,
     pub color: glam::Vec3,
 }
 
-impl VertexColor {
+impl ColorVertex {
     pub fn new(position: glam::Vec3, color: glam::Vec3) -> Self {
-        Self {
+        ColorVertex {
             position,
             color,
         }
     }
+}
 
-    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+impl Vertex for ColorVertex {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<VertexColor>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<ColorVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -35,23 +38,25 @@ impl VertexColor {
 }
 
 #[repr(C)]
-pub struct VertexTex {
+#[derive(Copy, Clone, Debug)]
+pub struct TextureVertex {
     pub position: glam::Vec3,
     pub tex_coords: glam::Vec2,
 }
 
-impl VertexTex {
+impl TextureVertex {
     pub fn new(position: glam::Vec3, tex_coords: glam::Vec2) -> Self {
-        Self {
+        TextureVertex {
             position,
             tex_coords,
         }
     }
+}
 
-    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        use std::mem;
+impl Vertex for TextureVertex {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<VertexTex>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<TextureVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -60,7 +65,7 @@ impl VertexTex {
                     format: wgpu::VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
@@ -71,21 +76,22 @@ impl VertexTex {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
-pub struct Vertex {
+pub struct PositionVertex {
     pub position: glam::Vec3,
 }
 
-impl Vertex {
+impl PositionVertex {
     pub fn new(position: glam::Vec3) -> Self {
-        Self {
+        PositionVertex {
             position,
         }
     }
+}
 
-    pub fn buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        use std::mem;
+impl Vertex for PositionVertex {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<PositionVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -98,12 +104,46 @@ impl Vertex {
     }
 }
 
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct ModelVertex {
+    pub position: glam::Vec3,
+    pub texture_coords: glam::Vec2,
+    pub normal: glam::Vec3,
+}
+
+impl Vertex for ModelVertex {
+    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<ModelVertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<[f32; 5]>() as wgpu::BufferAddress,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+            ],
+        }
+    }
+}
+
 #[derive(Debug)]
-pub struct Vertices<V: VertexBufferLayout> {
+pub struct Vertices<V: Vertex> {
     vertices: Vec<V>,
 }
 
-impl<V: VertexBufferLayout> Vertices<V> {
+impl<V: Vertex> Vertices<V> {
     pub fn new(vertices: Vec<V>) -> Self {
         Self {
             vertices,
@@ -149,24 +189,6 @@ impl<V: VertexBufferLayout> Vertices<V> {
     }
 }
 
-pub trait VertexBufferLayout {
+pub trait Vertex {
     fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a>;
-}
-
-impl VertexBufferLayout for VertexTex {
-    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        VertexTex::buffer_layout()
-    }
-}
-
-impl VertexBufferLayout for Vertex {
-    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        Vertex::buffer_layout()
-    }
-}
-
-impl VertexBufferLayout for VertexColor {
-    fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
-        VertexColor::buffer_layout()
-    }
 }

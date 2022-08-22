@@ -139,7 +139,7 @@ impl Bundle {
             &self.device,
             include_str!("../shaders/shader.wgsl"),
             &[&texture_bind_group_layout, &mvp_bind_group_layout],
-            &[Vertices::<VertexTex>::vertex_buffer_layout()],
+            &[Vertices::<TextureVertex>::vertex_buffer_layout()],
             self.config.format,
             Some(wgpu::DepthStencilState {
                 format: Self::DEPTH_FORMAT,
@@ -162,7 +162,7 @@ impl Bundle {
             include_str!("../shaders/instanced.wgsl"),
             &[&texture_bind_group_layout, &mvp_bind_group_layout],
             &[
-                Vertices::<VertexTex>::vertex_buffer_layout(),
+                Vertices::<TextureVertex>::vertex_buffer_layout(),
                 Instance::vertex_buffer_layout(),
             ],
             self.config.format,
@@ -191,7 +191,7 @@ impl Bundle {
                 &mvp_bind_group_layout,
                 &color_bind_group_layout,
             ],
-            &[Vertices::<VertexTex>::vertex_buffer_layout()],
+            &[Vertices::<TextureVertex>::vertex_buffer_layout()],
             self.config.format,
             Some(wgpu::DepthStencilState {
                 format: Self::DEPTH_FORMAT,
