@@ -55,6 +55,14 @@ impl Instance {
             return std::slice::from_raw_parts(bytes, std::mem::size_of::<Self>());
         }
     }
+
+    pub fn model(&self) -> glam::Mat4 {
+        self.model
+    }
+
+    pub fn set_model(&mut self, model: glam::Mat4) {
+        self.model = model;
+    }
 }
 
 pub struct Instances<I: super::VertexBufferLayout> {

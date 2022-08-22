@@ -10,6 +10,9 @@ pub struct Bundle {
 }
 
 impl Bundle {
+    pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
+
     pub fn surface(&self) -> &wgpu::Surface {
         &self.surface
     }
@@ -138,7 +141,13 @@ impl Bundle {
             &[&texture_bind_group_layout, &mvp_bind_group_layout],
             &[Vertices::<VertexTex>::vertex_buffer_layout()],
             self.config.format,
-            true,
+            Some(wgpu::DepthStencilState {
+                format: Self::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
         );
 
         texture_pipeline
@@ -157,7 +166,13 @@ impl Bundle {
                 Instance::vertex_buffer_layout(),
             ],
             self.config.format,
-            true,
+            Some(wgpu::DepthStencilState {
+                format: Self::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
         );
 
         texture_pipeline
@@ -178,7 +193,13 @@ impl Bundle {
             ],
             &[Vertices::<VertexTex>::vertex_buffer_layout()],
             self.config.format,
-            true,
+            Some(wgpu::DepthStencilState {
+                format: Self::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
         );
 
         text_pipeline

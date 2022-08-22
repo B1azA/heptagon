@@ -2,8 +2,6 @@ use heptagon::main_loop::*;
 use heptagon::rendering::*;
 use wgpu::util::DeviceExt;
 
-const NUM_INSTANCES_PER_ROW: u32 = 10;
-
 pub struct Game {
     bundle: Bundle,
     texture_pipeline: RenderPipeline,
@@ -21,6 +19,7 @@ pub struct Game {
     instances: Instances<Instance>,
     #[allow(dead_code)]
     instance_buffer: wgpu::Buffer,
+    depth_texture: Texture,
 }
 
 impl Game {
@@ -77,15 +76,17 @@ impl Game {
 
         let texture = font.glyph_texture(bundle.device(), bundle.queue(), 'a', 100.0);
 
+        let num_instances_per_row = 10;
+
         let instance_displacement: glam::Vec3 = glam::vec3(
-            NUM_INSTANCES_PER_ROW as f32 * 0.5,
+            num_instances_per_row as f32 * 0.5,
             0.0,
-            NUM_INSTANCES_PER_ROW as f32 * 0.5,
+            num_instances_per_row as f32 * 0.5,
         );
 
-        let instances = (0..NUM_INSTANCES_PER_ROW)
+        let instances = (0..num_instances_per_row)
             .flat_map(|z| {
-                (0..NUM_INSTANCES_PER_ROW).map(move |x| {
+                (0..num_instances_per_row).map(move |x| {
                     let position = glam::vec3(x as f32, 0.0, z as f32) - instance_displacement;
 
                     let rotation = if position == glam::Vec3::ZERO {
@@ -112,6 +113,9 @@ impl Game {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
+        let depth_texture = Texture::depth_texture(bundle.device(), bundle.config(),
+            Bundle::DEPTH_FORMAT, "depth_texture");
+
 
         Self {
             bundle,
@@ -129,6 +133,7 @@ impl Game {
             font,
             instances,
             instance_buffer,
+            depth_texture,
         }
     }
 }
@@ -144,7 +149,9 @@ impl Loop for Game {
         }
         if let Some(size) = input.window_resized() {
             self.bundle.resize(size);
-            self.projection.resize(size.width, size.height)
+            self.projection.resize(size.width, size.height);
+            self.depth_texture = Texture::depth_texture(self.bundle.device(), self.bundle.config(),
+            Bundle::DEPTH_FORMAT, "depth_texture");
         }
 
         if input.key_held(Key::W) {
@@ -234,13 +241,14 @@ impl Loop for Game {
         let vp_uniform = Uniform::new(self.projection.projection_mat() * self.camera.view_mat());
         let vp_bind_group = vp_uniform.bind_group(&self.bundle.device());
 
-        let mut render_pass = RenderPass::begin(
+        let mut render_pass = RenderPass::begin_with_depth(
             &mut encoder,
             &view,
             &self.texture_pipeline,
             &self.text_pipeline,
             &self.texture_pipeline_instanced,
             [0.1, 0.2, 0.3, 0.0],
+            self.depth_texture.view()
         );
 
         // render_pass.render_text(

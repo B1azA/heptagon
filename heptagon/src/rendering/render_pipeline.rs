@@ -9,7 +9,7 @@ impl RenderPipeline {
         bind_group_layouts: &[&wgpu::BindGroupLayout],
         vertex_buffer_layouts: &[wgpu::VertexBufferLayout],
         format: wgpu::TextureFormat,
-        alpha_blending: bool,
+        depth_stencil: Option<wgpu::DepthStencilState>,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -37,11 +37,7 @@ impl RenderPipeline {
                 targets: &[Some(wgpu::ColorTargetState {
                     format: format,
                     blend: {
-                        if alpha_blending {
-                            Some(wgpu::BlendState::ALPHA_BLENDING)
-                        } else {
-                            None
-                        }
+                        Some(wgpu::BlendState::ALPHA_BLENDING)
                     },
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
@@ -55,7 +51,7 @@ impl RenderPipeline {
                 unclipped_depth: false,
                 conservative: false,
             },
-            depth_stencil: None,
+            depth_stencil: depth_stencil,
             multisample: wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
@@ -69,5 +65,9 @@ impl RenderPipeline {
 
     pub fn render_pipeline(&self) -> &wgpu::RenderPipeline {
         &self.render_pipeline
+    }
+
+    pub fn set_render_pipeline(&mut self, render_pipeline: wgpu::RenderPipeline) {
+        self.render_pipeline = render_pipeline;
     }
 }
