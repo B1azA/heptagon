@@ -112,6 +112,16 @@ pub struct ModelVertex {
     pub normal: glam::Vec3,
 }
 
+impl ModelVertex {
+    pub fn new(position: glam::Vec3, texture_coords: glam::Vec2, normal: glam::Vec3) -> Self {
+        Self {
+            position,
+            texture_coords,
+            normal,
+        }
+    }
+}
+
 impl Vertex for ModelVertex {
     fn vertex_buffer_layout<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {

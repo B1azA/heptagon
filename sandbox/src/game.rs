@@ -100,7 +100,11 @@ impl Game {
                         glam::Quat::from_axis_angle(position.normalize(), std::f32::consts::PI / 4.0)
                     };
 
-                    Instance::new(Model::new(glam::Vec3::ONE, position, rotation).model_mat())
+                    Instance::new(glam::Mat4::from_scale_rotation_translation(
+                        glam::Vec3::ONE,
+                        rotation,
+                        position,
+                    ))
                 })
             })
             .collect::<Vec<_>>();
@@ -224,10 +228,10 @@ impl Loop for Game {
         let scale = glam::Vec3::ONE;
         let translation = glam::Vec3::new(0.0, 0.0, 0.0);
         let rotation = glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, 0.0, 0.0);
-        let model = Model::new(scale, translation, rotation);
+        let model = glam::Mat4::from_scale_rotation_translation(scale, rotation, translation);
 
         let mvp_uniform = Uniform::new(
-            self.projection.projection_mat() * self.camera.view_mat() * model.model_mat(),
+            self.projection.projection_mat() * self.camera.view_mat() * model,
         );
         let mvp_bind_group = mvp_uniform.bind_group(&self.bundle.device());
 

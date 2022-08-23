@@ -16,6 +16,7 @@ winit_input_helper = "0.12.0"
 glam = "0.20.5"
 game-loop = { version = "0.9.1", features = ["window"] }
 fontdue = "0.7.2"
+tobj =   { version = "3.2.3", features = ["async"] }
 
 [dependencies.image]
 version = "0.24.2"

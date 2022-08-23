@@ -110,6 +110,24 @@ impl<'a> RenderPass<'a> {
         self.render_pass.draw_indexed(indices_range, 0, 0..1);
     }
 
+    pub fn render_texture_u32(
+        &mut self,
+        vertex_buffer_slice: wgpu::BufferSlice<'a>,
+        index_buffer_slice: wgpu::BufferSlice<'a>,
+        indices_range: std::ops::Range<u32>,
+        texture_bind_group: &'a wgpu::BindGroup,
+        mvp_bind_group: &'a wgpu::BindGroup,
+    ) {
+        self.render_pass
+            .set_pipeline(self.texture_pipeline.render_pipeline());
+        self.render_pass.set_bind_group(0, &texture_bind_group, &[]);
+        self.render_pass.set_bind_group(1, &mvp_bind_group, &[]);
+        self.render_pass.set_vertex_buffer(0, vertex_buffer_slice);
+        self.render_pass
+            .set_index_buffer(index_buffer_slice, wgpu::IndexFormat::Uint32);
+        self.render_pass.draw_indexed(indices_range, 0, 0..1);
+    }
+
     pub fn render_texture_instanced(
         &mut self,
         vertex_buffer_slice: wgpu::BufferSlice<'a>,

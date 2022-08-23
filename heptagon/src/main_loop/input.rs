@@ -1,5 +1,3 @@
-use winit::window::Window;
-
 pub struct Input {
     pub(crate) input_helper: winit_input_helper::WinitInputHelper,
     pub(crate) mouse_lock: bool,

@@ -1,8 +1,7 @@
-use std::time::{Instant, Duration};
+use std::time::{Instant};
 
 use winit::dpi::{Size, PhysicalSize};
 use winit::{
-    event::*,
     event_loop::ControlFlow
 };
 
