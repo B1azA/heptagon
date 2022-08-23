@@ -1,7 +1,24 @@
-[workspace]
-resolver = "2"
+[package]
+name = "heptagon"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-	"heptagon",
-	"sandbox"
-]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-std = "1.11.0"
+env_logger = "0.9.0"
+log = "0.4.16"
+wgpu = "0.13.1"
+winit = "0.26.1"
+anyhow = "1.0.57"
+winit_input_helper = "0.12.0"
+glam = "0.20.5"
+game-loop = { version = "0.9.1", features = ["window"] }
+fontdue = "0.7.2"
+tobj =   { version = "3.2.3", features = ["async"] }
+
+[dependencies.image]
+version = "0.24.2"
+default-features = false
+features = ["png", "jpeg"]
