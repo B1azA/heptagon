@@ -26,10 +26,9 @@ impl Font {
         let dimensions = (metrics.width as u32, metrics.height as u32);
 
         let texture = Texture::from_r8u_bytes(
+            bundle,
             &bytes,
             dimensions,
-            bundle.device(),
-            bundle.queue(),
             "Font Texture"
         ).unwrap();
         texture

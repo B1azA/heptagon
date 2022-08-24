@@ -23,8 +23,8 @@ impl<T> Uniform<T> {
         self.data = data;
     }
 
-    pub fn buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        device.create_buffer_init(
+    pub fn buffer(&self, bundle: &super::bundle::Bundle) -> wgpu::Buffer {
+        bundle.device().create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Uniform buffer"),
                 contents: self.to_bytes(),
@@ -33,8 +33,8 @@ impl<T> Uniform<T> {
         )
     }
 
-    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        device.create_bind_group_layout(
+    pub fn bind_group_layout(bundle: &super::bundle::Bundle) -> wgpu::BindGroupLayout {
+        bundle.device().create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
@@ -53,13 +53,13 @@ impl<T> Uniform<T> {
         )
     }
 
-    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::bind_group_layout(device),
+    pub fn bind_group(&self, bundle: &super::bundle::Bundle) -> wgpu::BindGroup {
+        bundle.device().create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &Self::bind_group_layout(bundle),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: self.buffer(device).as_entire_binding(),
+                    resource: self.buffer(bundle).as_entire_binding(),
                 }
             ],
             label: Some("Uniform bind group"),

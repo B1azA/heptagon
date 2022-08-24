@@ -137,8 +137,8 @@ impl Bundle {
     }
 
     pub fn texture_pipeline(&self) -> RenderPipeline {
-        let texture_bind_group_layout = super::Texture::bind_group_layout(&self.device);
-        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(&self.device);
+        let texture_bind_group_layout = super::Texture::bind_group_layout(self);
+        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);
 
         let texture_pipeline = RenderPipeline::new(
             &self.device,
@@ -159,8 +159,8 @@ impl Bundle {
     }
 
     pub fn texture_pipeline_instanced(&self) -> RenderPipeline {
-        let texture_bind_group_layout = super::Texture::bind_group_layout(&self.device);
-        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(&self.device);
+        let texture_bind_group_layout = super::Texture::bind_group_layout(self);
+        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);
 
         let texture_pipeline = RenderPipeline::new(
             &self.device,
@@ -184,9 +184,9 @@ impl Bundle {
     }
 
     pub fn text_pipeline(&self) -> RenderPipeline {
-        let texture_bind_group_layout = super::Texture::bind_group_layout(&self.device);
-        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(&self.device);
-        let color_bind_group_layout = super::Uniform::<glam::Vec4>::bind_group_layout(&self.device);
+        let texture_bind_group_layout = super::Texture::bind_group_layout(self);
+        let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);
+        let color_bind_group_layout = super::Uniform::<glam::Vec4>::bind_group_layout(self);
 
         let text_pipeline = RenderPipeline::new(
             &self.device,

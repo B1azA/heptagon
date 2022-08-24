@@ -55,28 +55,28 @@ impl Texture {
         }
     }
 
-    pub fn from_path(device: &wgpu::Device, queue: &wgpu::Queue, path: &str, label: &str
+    pub fn from_path(bundle: &super::bundle::Bundle, path: &str, label: &str
     ) -> Result<Self> {
         let bytes = std::fs::read(path).unwrap();
-        Self::from_bytes(&device, &queue, &bytes, label)
+        Self::from_bytes(bundle, &bytes, label)
     }
 
-    pub fn from_bytes(device: &wgpu::Device, queue: &wgpu::Queue, bytes: &[u8], label: &str
+    pub fn from_bytes(bundle: &super::bundle::Bundle, bytes: &[u8], label: &str
     ) -> Result<Self> {
 
         let img = image::load_from_memory(bytes).unwrap();
-        Self::from_image(device, queue, &img, label)
+        Self::from_image(bundle, &img, label)
     }
 
-    pub fn empty(device: &wgpu::Device, queue: &wgpu::Queue,
+    pub fn empty(bundle: &super::bundle::Bundle,
         dimensions: (u32, u32), label: &str
         ) -> Result<Self> {
             
         let img = image::DynamicImage::new_rgba8(dimensions.0, dimensions.1);
-        Self::from_image(device, queue, &img, label)
+        Self::from_image(bundle, &img, label)
     }
 
-    pub fn from_image(device: &wgpu::Device, queue: &wgpu::Queue, 
+    pub fn from_image(bundle: &super::bundle::Bundle, 
         img: &image::DynamicImage, label: &str) -> Result<Self> {
 
         let rgba = img.to_rgba8();
@@ -90,7 +90,7 @@ impl Texture {
 
         let texture_format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
-        let texture = device.create_texture(
+        let texture = bundle.device().create_texture(
             &wgpu::TextureDescriptor {
                 label: Some(label),
                 size,
@@ -103,7 +103,7 @@ impl Texture {
             }
         );
 
-        queue.write_texture(
+        bundle.queue().write_texture(
             wgpu::ImageCopyTexture {
                 aspect: wgpu::TextureAspect::All,
                 texture: &texture,
@@ -120,7 +120,7 @@ impl Texture {
         );
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(
+        let sampler = bundle.device().create_sampler(
             &wgpu::SamplerDescriptor {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -135,8 +135,10 @@ impl Texture {
         Ok(Self { texture, view, sampler })
     }
 
-    pub fn from_r8u_bytes(bytes: &[u8], dimensions: (u32, u32),
-        device: &wgpu::Device, queue: &wgpu::Queue, label: &str
+    pub fn from_r8u_bytes(
+        bundle: &super::bundle::Bundle,
+        bytes: &[u8], dimensions: (u32, u32),
+        label: &str
         ) -> Result<Self> {
 
         let size = wgpu::Extent3d {
@@ -147,7 +149,7 @@ impl Texture {
 
         let texture_format = wgpu::TextureFormat::R8Unorm;
 
-        let texture = device.create_texture(
+        let texture = bundle.device().create_texture(
             &wgpu::TextureDescriptor {
                 label: Some(label),
                 size,
@@ -159,7 +161,7 @@ impl Texture {
             }
         );
 
-        queue.write_texture(
+        bundle.queue().write_texture(
             wgpu::ImageCopyTexture {
                 aspect: wgpu::TextureAspect::All,
                 texture: &texture,
@@ -176,7 +178,7 @@ impl Texture {
         );
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(
+        let sampler = bundle.device().create_sampler(
             &wgpu::SamplerDescriptor {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -191,7 +193,9 @@ impl Texture {
         Ok(Self { texture, view, sampler })
     }
 
-    pub fn from_bytes_custom(device: &wgpu::Device, queue: &wgpu::Queue, label: &str,
+    pub fn from_bytes_custom(
+        bundle: &super::bundle::Bundle,
+        label: &str,
         format: wgpu::TextureFormat, bytes: &[u8], dimensions: (u32, u32), bytes_per_pixel: u8,
         usage: wgpu::TextureUsages) -> Result<Self> {
 
@@ -203,7 +207,7 @@ impl Texture {
     
             let texture_format = format;
     
-            let texture = device.create_texture(
+            let texture = bundle.device().create_texture(
                 &wgpu::TextureDescriptor {
                     label: Some(label),
                     size,
@@ -215,7 +219,7 @@ impl Texture {
                 }
             );
     
-            queue.write_texture(
+            bundle.queue().write_texture(
                 wgpu::ImageCopyTexture {
                     aspect: wgpu::TextureAspect::All,
                     texture: &texture,
@@ -232,7 +236,7 @@ impl Texture {
             );
     
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let sampler = device.create_sampler(
+            let sampler = bundle.device().create_sampler(
                 &wgpu::SamplerDescriptor {
                     address_mode_u: wgpu::AddressMode::ClampToEdge,
                     address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -247,8 +251,8 @@ impl Texture {
             Ok(Self { texture, view, sampler })
     }
 
-    pub fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
-        device.create_bind_group_layout(
+    pub fn bind_group_layout(bundle: &super::bundle::Bundle) -> wgpu::BindGroupLayout {
+        bundle.device().create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &[
                     wgpu::BindGroupLayoutEntry {
@@ -273,9 +277,9 @@ impl Texture {
         )
     }
 
-    pub fn bind_group(&self, device: &wgpu::Device) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &Self::bind_group_layout(device),
+    pub fn bind_group(&self, bundle: &super::bundle::Bundle) -> wgpu::BindGroup {
+        bundle.device().create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &Self::bind_group_layout(bundle),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -290,8 +294,8 @@ impl Texture {
         })
     }
 
-    pub fn bind_group_with_layout(&self, device: &wgpu::Device, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
+    pub fn bind_group_with_layout(&self, bundle: &super::bundle::Bundle, layout: &wgpu::BindGroupLayout) -> wgpu::BindGroup {
+        bundle.device().create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -308,14 +312,13 @@ impl Texture {
     }
 
     pub fn depth_texture(
-        device: &wgpu::Device,
-        config: &wgpu::SurfaceConfiguration,
+        bundle: &super::bundle::Bundle,
         format: wgpu::TextureFormat,
         label: &str
     ) -> Self {    
         let size = wgpu::Extent3d {
-            width: config.width,
-            height: config.height,
+            width: bundle.config().width,
+            height: bundle.config().height,
             depth_or_array_layers: 1,
         };
         let desc = wgpu::TextureDescriptor {
@@ -328,10 +331,10 @@ impl Texture {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT
                 | wgpu::TextureUsages::TEXTURE_BINDING,
         };
-        let texture = device.create_texture(&desc);
+        let texture = bundle.device().create_texture(&desc);
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(
+        let sampler = bundle.device().create_sampler(
             &wgpu::SamplerDescriptor {
                 address_mode_u: wgpu::AddressMode::ClampToEdge,
                 address_mode_v: wgpu::AddressMode::ClampToEdge,

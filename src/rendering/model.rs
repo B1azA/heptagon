@@ -42,7 +42,7 @@ impl Model {
         let mut materials = Vec::new();
         for m in obj_materials.unwrap() {
             let diffuse_texture = super::Texture::from_path(
-                bundle.device(), bundle.queue(), &m.diffuse_texture, "model_texture").unwrap();
+                bundle, &m.diffuse_texture, "model_texture").unwrap();
             let bind_group = bundle.device().create_bind_group(&wgpu::BindGroupDescriptor {
                 layout,
                 entries: &[
