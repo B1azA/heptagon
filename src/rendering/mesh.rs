@@ -17,12 +17,12 @@ impl<V: Vertex, I> Mesh<V, I> {
         Vertices::<V>::vertex_buffer_layout()
     }
 
-    pub fn vertex_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        self.vertices.vertex_buffer(device)
+    pub fn vertex_buffer(&self, bundle: &super::bundle::Bundle) -> wgpu::Buffer {
+        self.vertices.vertex_buffer(bundle)
     }
 
-    pub fn index_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        self.indices.index_buffer(device)
+    pub fn index_buffer(&self, bundle: &super::bundle::Bundle) -> wgpu::Buffer {
+        self.indices.index_buffer(bundle)
     }
 
     pub fn vertices(&self) -> &Vec<V> {
@@ -49,10 +49,10 @@ impl<V: Vertex, I> Mesh<V, I> {
         self.indices.set_indices(indices);
     }
 
-    pub fn mesh_buffer(&self, device: &wgpu::Device) -> MeshBuffer {
+    pub fn mesh_buffer(&self, bundle: &super::bundle::Bundle) -> MeshBuffer {
         MeshBuffer {
-            vertex_buffer: self.vertices.vertex_buffer(device),
-            index_buffer: self.indices.index_buffer(device),
+            vertex_buffer: self.vertices.vertex_buffer(bundle),
+            index_buffer: self.indices.index_buffer(bundle),
             index_count: self.indices.len() as u32,
         }
     }

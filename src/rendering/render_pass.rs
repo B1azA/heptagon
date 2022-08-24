@@ -2,18 +2,12 @@ use super::RenderPipeline;
 
 pub struct RenderPass<'a> {
     render_pass: wgpu::RenderPass<'a>,
-    texture_pipeline: &'a RenderPipeline,
-    text_pipeline: &'a RenderPipeline,
-    texture_pipeline_instanced: &'a RenderPipeline,
 }
 
 impl<'a> RenderPass<'a> {
-    pub fn begin(
+    pub fn begin_without_depth(
         encoder: &'a mut wgpu::CommandEncoder,
         view: &'a wgpu::TextureView,
-        texture_pipeline: &'a RenderPipeline,
-        text_pipeline: &'a RenderPipeline,
-        texture_pipeline_instanced: &'a RenderPipeline,
         background_color: [f64; 4],
     ) -> Self {
         let render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -36,18 +30,12 @@ impl<'a> RenderPass<'a> {
 
         Self {
             render_pass,
-            texture_pipeline,
-            text_pipeline,
-            texture_pipeline_instanced,
         }
     }
 
-    pub fn begin_with_depth(
+    pub fn begin(
         encoder: &'a mut wgpu::CommandEncoder,
         view: &'a wgpu::TextureView,
-        texture_pipeline: &'a RenderPipeline,
-        text_pipeline: &'a RenderPipeline,
-        texture_pipeline_instanced: &'a RenderPipeline,
         background_color: [f64; 4],
         depth_texture_view: &'a wgpu::TextureView,
     ) -> Self {
@@ -78,9 +66,6 @@ impl<'a> RenderPass<'a> {
 
         Self {
             render_pass,
-            texture_pipeline,
-            text_pipeline,
-            texture_pipeline_instanced,
         }
     }
 
@@ -99,9 +84,10 @@ impl<'a> RenderPass<'a> {
         indices_range: std::ops::Range<u32>,
         texture_bind_group: &'a wgpu::BindGroup,
         mvp_bind_group: &'a wgpu::BindGroup,
+        render_pipeline: &'a RenderPipeline,
     ) {
         self.render_pass
-            .set_pipeline(self.texture_pipeline.render_pipeline());
+            .set_pipeline(render_pipeline.render_pipeline());
         self.render_pass.set_bind_group(0, &texture_bind_group, &[]);
         self.render_pass.set_bind_group(1, &mvp_bind_group, &[]);
         self.render_pass.set_vertex_buffer(0, vertex_buffer_slice);
@@ -117,9 +103,10 @@ impl<'a> RenderPass<'a> {
         indices_range: std::ops::Range<u32>,
         texture_bind_group: &'a wgpu::BindGroup,
         mvp_bind_group: &'a wgpu::BindGroup,
+        render_pipeline: &'a RenderPipeline,
     ) {
         self.render_pass
-            .set_pipeline(self.texture_pipeline.render_pipeline());
+            .set_pipeline(render_pipeline.render_pipeline());
         self.render_pass.set_bind_group(0, &texture_bind_group, &[]);
         self.render_pass.set_bind_group(1, &mvp_bind_group, &[]);
         self.render_pass.set_vertex_buffer(0, vertex_buffer_slice);
@@ -137,8 +124,9 @@ impl<'a> RenderPass<'a> {
         vp_bind_group: &'a wgpu::BindGroup,
         instance_buffer_slice: wgpu::BufferSlice<'a>,
         instances_range: std::ops::Range<u32>,
+        render_pipeline: &'a RenderPipeline,
     ) {
-        self.render_pass.set_pipeline(&self.texture_pipeline_instanced.render_pipeline());
+        self.render_pass.set_pipeline(render_pipeline.render_pipeline());
         self.render_pass.set_bind_group(0, texture_bind_group, &[]);
         self.render_pass.set_bind_group(1, vp_bind_group, &[]);
         self.render_pass.set_vertex_buffer(0, vertex_buffer_slice);
@@ -155,9 +143,10 @@ impl<'a> RenderPass<'a> {
         texture_bind_group: &'a wgpu::BindGroup,
         mvp_bind_group: &'a wgpu::BindGroup,
         color_bind_group: &'a wgpu::BindGroup,
+        render_pipeline: &'a RenderPipeline,
     ) {
         self.render_pass
-            .set_pipeline(self.text_pipeline.render_pipeline());
+            .set_pipeline(render_pipeline.render_pipeline());
         self.render_pass.set_bind_group(0, &texture_bind_group, &[]);
         self.render_pass.set_bind_group(1, &mvp_bind_group, &[]);
         self.render_pass.set_bind_group(2, &color_bind_group, &[]);

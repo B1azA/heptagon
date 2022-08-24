@@ -111,6 +111,11 @@ impl Bundle {
         self.surface.get_current_texture().unwrap()
     }
 
+    pub fn surface_view(&self) -> wgpu::TextureView {
+        self.surface_texture().texture
+        .create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
     pub fn encoder(&self) -> wgpu::CommandEncoder {
         self.device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {

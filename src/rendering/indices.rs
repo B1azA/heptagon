@@ -23,8 +23,8 @@ impl<I> Indices<I> {
         }
     }
 
-    pub fn index_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        let index_buffer = device.create_buffer_init(
+    pub fn index_buffer(&self, bundle: &super::bundle::Bundle) -> wgpu::Buffer {
+        let index_buffer = bundle.device().create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
                 contents: self.to_bytes(),

@@ -1,3 +1,5 @@
+use std::io::{BufReader, Cursor};
+
 use image::GenericImageView;
 use anyhow::*;
 

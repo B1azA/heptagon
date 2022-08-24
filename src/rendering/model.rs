@@ -19,8 +19,7 @@ impl Model {
 
     pub fn from_path(
         path: &str,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        bundle: &super::bundle::Bundle,
         layout: &wgpu::BindGroupLayout
     ) -> Result<Self> {
         let obj_text = std::fs::read_to_string(path).unwrap();
@@ -43,8 +42,8 @@ impl Model {
         let mut materials = Vec::new();
         for m in obj_materials.unwrap() {
             let diffuse_texture = super::Texture::from_path(
-                device, queue, &m.diffuse_texture, "model_texture").unwrap();
-            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                bundle.device(), bundle.queue(), &m.diffuse_texture, "model_texture").unwrap();
+            let bind_group = bundle.device().create_bind_group(&wgpu::BindGroupDescriptor {
                 layout,
                 entries: &[
                     wgpu::BindGroupEntry {
@@ -80,7 +79,7 @@ impl Model {
 
             let mesh = super::Mesh::new(vertices, indices);
 
-            (mesh.mesh_buffer(device), m.mesh.material_id.unwrap_or(0))
+            (mesh.mesh_buffer(bundle), m.mesh.material_id.unwrap_or(0))
         }).collect::<Vec<_>>();
 
         Ok(Model::new(meshes, materials))

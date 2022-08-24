@@ -183,8 +183,8 @@ impl<V: Vertex> Vertices<V> {
         }
     }
 
-    pub fn vertex_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        let vertex_buffer = device.create_buffer_init(
+    pub fn vertex_buffer(&self, bundle: &super::bundle::Bundle) -> wgpu::Buffer {
+        let vertex_buffer = bundle.device().create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Vertex Buffer"),
                 contents: self.to_bytes(),

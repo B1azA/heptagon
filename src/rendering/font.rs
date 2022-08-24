@@ -1,3 +1,5 @@
+use anyhow::*;
+
 use super::texture::Texture;
 
 pub struct Font {
@@ -5,20 +7,17 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self> {
         let font = fontdue::Font::from_bytes(bytes, fontdue::FontSettings::default()).unwrap();
-        Self {
-            font,
-        }
+        Ok(Self { font })
     }
 
-    pub fn from_path(path: &str) -> Self {
+    pub fn from_path(path: &str) -> Result<Self> {
         let bytes: Vec<u8> = std::fs::read(path).unwrap();
         Self::from_bytes(bytes)
     }
 
-    pub fn glyph_texture(&self, device: &wgpu::Device,
-        queue: &wgpu::Queue, character: char,
+    pub fn glyph_texture(&self, bundle: &super::bundle::Bundle, character: char,
         size: f32
     ) -> Texture {
         let (metrics, bitmap) = self.font.rasterize(character, size);
@@ -26,7 +25,13 @@ impl Font {
         let bytes: Vec<u8> = bitmap;
         let dimensions = (metrics.width as u32, metrics.height as u32);
 
-        let texture = Texture::from_r8u_bytes(&bytes, dimensions, device, queue, "Font Texture").unwrap();
+        let texture = Texture::from_r8u_bytes(
+            &bytes,
+            dimensions,
+            bundle.device(),
+            bundle.queue(),
+            "Font Texture"
+        ).unwrap();
         texture
     }
 }
