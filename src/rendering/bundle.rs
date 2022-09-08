@@ -1,6 +1,7 @@
 use crate::rendering::render_pipeline::*;
 use crate::rendering::*;
 
+/// Struct to store multiple structs needed for rendering.
 pub struct Bundle {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -10,29 +11,35 @@ pub struct Bundle {
 }
 
 impl Bundle {
+    /// The default depth format.
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-
+    /// Returns its surface.
     pub fn surface(&self) -> &wgpu::Surface {
         &self.surface
     }
 
+    /// Returns its device.
     pub fn device(&self) -> &wgpu::Device {
         &self.device
     }
 
+    /// Returns its queue.
     pub fn queue(&self) -> &wgpu::Queue {
         &self.queue
     }
 
+    /// Returns its config.
     pub fn config(&self) -> &wgpu::SurfaceConfiguration {
         &self.config
     }
 
+    /// Returns its size.
     pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.size
     }
 
+    /// Create a new Bundle with custom properties.
     pub fn new_custom(
         surface: wgpu::Surface,
         device: wgpu::Device,
@@ -61,6 +68,7 @@ impl Bundle {
         }
     }
 
+    /// Create a new Bundle.
     pub fn new(window: &winit::window::Window) -> Self {
         async_std::task::block_on(Self::async_new(window))
     }
@@ -107,15 +115,18 @@ impl Bundle {
         Self::async_new_custom(surface, device, queue, config).await
     }
 
+    /// Returns its surface_texture. 
     pub fn surface_texture(&self) -> wgpu::SurfaceTexture {
         self.surface.get_current_texture().unwrap()
     }
 
+    /// Returns its surface_view.
     pub fn surface_view(&self) -> wgpu::TextureView {
         self.surface_texture().texture
         .create_view(&wgpu::TextureViewDescriptor::default())
     }
 
+    /// Creates a new encoder.
     pub fn encoder(&self) -> wgpu::CommandEncoder {
         self.device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -123,19 +134,22 @@ impl Bundle {
             })
     }
 
+    /// Returns preffered format by your PC.
     pub fn preffered_format(&self) -> wgpu::TextureFormat {
         self.config().format
     }
 
-    pub fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
-        if size.width > 0 && size.height > 0 {
-            self.size = size;
-            self.config.width = size.width;
-            self.config.height = size.height;
+    /// Resizes its surface.
+    /// Should be called when window has been resized.
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
+            self.config.width = width;
+            self.config.height = height;
             self.surface.configure(&self.device, &self.config);
         }
     }
 
+    /// Creates a pipeline for textures.
     pub fn texture_pipeline(&self) -> RenderPipeline {
         let texture_bind_group_layout = super::Texture::bind_group_layout(self);
         let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);
@@ -158,6 +172,7 @@ impl Bundle {
         texture_pipeline
     }
 
+    /// Creates a pipeline for instanced textures.
     pub fn texture_pipeline_instanced(&self) -> RenderPipeline {
         let texture_bind_group_layout = super::Texture::bind_group_layout(self);
         let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);
@@ -183,6 +198,7 @@ impl Bundle {
         texture_pipeline
     }
 
+    /// Creates a pipeline for text.
     pub fn text_pipeline(&self) -> RenderPipeline {
         let texture_bind_group_layout = super::Texture::bind_group_layout(self);
         let mvp_bind_group_layout = super::Uniform::<glam::Mat4>::bind_group_layout(self);

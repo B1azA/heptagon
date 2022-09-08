@@ -5,26 +5,32 @@ use winit::{
     event_loop::ControlFlow
 };
 
-use game_loop::game_loop;
-use game_loop::winit::event::{Event, WindowEvent};
-use game_loop::winit::event_loop::EventLoop;
-use game_loop::winit::window::{WindowBuilder};
+use winit::event_loop::EventLoop;
+use winit::window::WindowBuilder;
+use winit::event::Event;
+use winit::event::WindowEvent;
 
+// -------- PUBLIC --------
 pub mod input;
 
 pub use input::*;
-pub use winit;
-pub use winit::window::Window;
-pub use crate::rendering::bundle::*;
-pub use glam;
 
+pub type Key = winit::event::VirtualKeyCode;
+pub type Window = winit::window::Window;
+
+pub use crate::rendering::bundle::*;
+// ------------------------
+
+
+/// Struct for controlling app loops and window creation.
 pub struct MainLoop {
     event_loop: EventLoop<()>,
-    pub window: Window,
+    window: Window,
     input: Input,
 }
 
 impl MainLoop {
+    /// Creates new MainLoop.
     pub fn new(window_title: &str) -> Self {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new()
@@ -40,47 +46,13 @@ impl MainLoop {
         }
     }
 
-    pub fn render_belongings(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
-        async_std::task::block_on(self.render_belongings_async())
+    /// Returns a reference to the window.
+    pub fn window(&self) -> &Window {
+        &self.window
     }
 
-    async fn render_belongings_async(&self) -> (wgpu::Surface, wgpu::Device, wgpu::Queue, wgpu::SurfaceConfiguration) {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(&self.window) };
-        let size = self.window.inner_size();
-        let adapter = instance.request_adapter(
-            &wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            },
-        ).await.unwrap();
-
-        let (device, queue) = adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                features: wgpu::Features::empty(),
-                limits: if cfg!(target_arch = "wasm32") {
-                    wgpu::Limits::downlevel_webgl2_defaults()
-                } else {
-                    wgpu::Limits::default()
-                },
-                label: None,
-            },
-            None,
-        ).await.unwrap();
-
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
-            width: size.width,
-            height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-        };
-
-        (surface, device, queue, config)
-    }
-
-    pub fn run(mut self, mut loops: impl Loop + std::marker::Send + 'static) {
+    /// Run event loop of an app.
+    pub fn run(mut self, mut app: impl App + std::marker::Send + 'static) {
         env_logger::init();
 
         let mut last = Instant::now();
@@ -93,31 +65,27 @@ impl MainLoop {
                     ref event,
                     window_id,
                 } if window_id == self.window.id() => match event {
-                    WindowEvent::CloseRequested => { *control_flow = ControlFlow::Exit },
+                    WindowEvent::CloseRequested => { 
+                        *control_flow = ControlFlow::Exit;
+                    },
+
                     _ => {}
                 },
                 Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                    loops.render(&mut self.window);                   
+                    app.render();                   
                 },
                 Event::MainEventsCleared => {
                     if self.input.mouse_lock {
-                        let new_pos = winit::dpi::PhysicalPosition::new(self.window.inner_size().width / 2, 
-                        self.window.inner_size().height / 2);
-                        let mouse_pos = self.input.input_helper.mouse();
+                        let new_pos = winit::dpi::PhysicalPosition::new(self.window.inner_size().width / 2,
+                            self.window.inner_size().height / 2);
                         self.window.set_cursor_position(new_pos).unwrap();
-                        
-                        if let Some(pos) = mouse_pos {
-                            self.input.mouse_difference.0 = pos.0 - new_pos.x as f32;
-                            self.input.mouse_difference.1 = pos.1  - new_pos.y as f32;
-                        } else {
-                            self.input.mouse_difference = (0.0, 0.0);
-                        }
                     }
                     
                     // UPDATE
                     let now = Instant::now();
                     let delta = now.duration_since(last).as_micros() as f32 / 1000000.0;
-                    loops.update(&mut self.window, delta, &mut self.input);
+                    app.update(&mut self.window, delta, &mut self.input);
+                    self.input.updated();
                     last = now;
                     
                     // RENDER
@@ -126,28 +94,15 @@ impl MainLoop {
 
                 _ => {}
             }
-        });
-    }
 
-    pub fn runrun(self, loops: impl Loop + std::marker::Send + 'static) {
-        let mut last = Instant::now();
-        game_loop(self.event_loop, self.window, (Input::new(), loops), 240, 0.1, move |g| {
-            let now = Instant::now();
-            let delta = now.duration_since(last).as_micros() as f32 / 1000000.0;
-            g.game.1.update(&mut g.window, delta, &mut g.game.0);
-            last = now;
-        }, |g| {
-            g.game.1.render(&mut g.window);
-        }, |g, event| {
-            g.game.0.update(event);
-            if g.game.0.quit() {
-                g.exit_next_iteration = true;
-            }
         });
     }
 }
 
-pub trait Loop {
+/// Trait for creating struct which can be controlled by an event loop.
+pub trait App {
+    /// Update function.
     fn update(&mut self, window: &mut Window, delta: f32, input: &mut Input);
-    fn render(&mut self, window: &mut Window);
+    /// Render function.
+    fn render(&mut self);
 }
