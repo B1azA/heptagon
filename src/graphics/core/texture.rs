@@ -55,11 +55,11 @@ impl Texture {
         }
     }
 
-    pub fn from_path(bundle: &super::bundle::Bundle, path: &str, label: &str
-    ) -> Result<Self> {
-        let bytes = std::fs::read(path).unwrap();
-        Self::from_bytes(bundle, &bytes, label)
-    }
+    // pub fn from_path(bundle: &super::bundle::Bundle, path: &str, label: &str
+    // ) -> Result<Self> {
+    //     let bytes = std::fs::read(path).unwrap();
+    //     Self::from_bytes(bundle, &bytes, label)
+    // }
 
     pub fn from_bytes(bundle: &super::bundle::Bundle, bytes: &[u8], label: &str
     ) -> Result<Self> {

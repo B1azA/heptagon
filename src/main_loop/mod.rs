@@ -18,7 +18,6 @@ pub use input::*;
 pub type Key = winit::event::VirtualKeyCode;
 pub type Window = winit::window::Window;
 
-pub use crate::rendering::bundle::*;
 // ------------------------
 
 

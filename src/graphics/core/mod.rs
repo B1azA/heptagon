@@ -1,10 +1,9 @@
 pub mod wgpu;
 
 pub mod bundle;
-
+pub use bundle::*;
 
 pub use glam;
-
 
 pub mod render_queue;
 pub use render_queue::*;

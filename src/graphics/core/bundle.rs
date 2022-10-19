@@ -1,5 +1,4 @@
-use crate::rendering::render_pipeline::*;
-use crate::rendering::*;
+use super::*;
 
 /// Struct to store multiple structs needed for rendering.
 pub struct Bundle {
@@ -115,7 +114,7 @@ impl Bundle {
         Self::async_new_custom(surface, device, queue, config).await
     }
 
-    /// Returns its surface_texture. 
+    /// Returns its surface_texture.
     pub fn surface_texture(&self) -> wgpu::SurfaceTexture {
         self.surface.get_current_texture().unwrap()
     }
